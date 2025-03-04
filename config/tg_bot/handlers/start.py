@@ -32,9 +32,10 @@ async def select_language(message: Message, state: FSMContext) -> None:
     tg_id = message.from_user.id
 
     if message.text == uz_text:
-        TemporaryUser.objects.update_or_create(
+        user=TemporaryUser.objects.update_or_create(
             tg_id=tg_id, defaults={"interface_language": "uz"}
         )
+
     elif message.text == ru_text:
         TemporaryUser.objects.update_or_create(
             tg_id=tg_id, defaults={"interface_language": "ru"}
@@ -249,9 +250,9 @@ async def extra_number(message: Message, state: FSMContext) -> None:
     await state.set_data(data)
     await state.set_state(Messeage.age)
     if user.interface_language == 'uz':
-        await message.answer(text=uz.get('age_ask'), reply_markup=age_buttons())
+        await message.answer(text=uz.get('age_ask'), reply_markup=age_buttons_uz())
     else:
-        await message.answer(text=ru.get('age_ask'), reply_markup=age_buttons())
+        await message.answer(text=ru.get('age_ask'), reply_markup=age_buttons_ru())
 
 
 @dp.message(StateFilter(Messeage.age))
@@ -289,10 +290,10 @@ async def study_level(message: Message, state: FSMContext) -> None:
     if message.text in [ortga, nazad]:
         await state.set_state(Messeage.age)
         if user.interface_language == 'uz':
-            await message.answer(text=uz.get('age_ask'), reply_markup=age_buttons())
+            await message.answer(text=uz.get('age_ask'), reply_markup=age_buttons_uz())
             return
         else:
-            await message.answer(text=ru.get('age_ask'), reply_markup=age_buttons())
+            await message.answer(text=ru.get('age_ask'), reply_markup=age_buttons_ru())
             return
     if not message.text in univer:
         if user.interface_language == 'uz':
@@ -393,9 +394,9 @@ async def direction(message: Message, state: FSMContext) -> None:
     await state.set_data(data)
     await state.set_state(Messeage.language)
     if user.interface_language == 'uz':
-        await message.answer(text=uz.get('ask_study_lang'), reply_markup=language_buttons())
+        await message.answer(text=uz.get('ask_study_lang'), reply_markup=language_buttons_uz())
     else:
-        await message.answer(text=ru.get('ask_study_lang'), reply_markup=language_buttons())
+        await message.answer(text=ru.get('ask_study_lang'), reply_markup=language_buttons_ru())
 
 
 @dp.message(StateFilter(Messeage.language))
@@ -433,10 +434,10 @@ async def education_type(message: Message, state: FSMContext) -> None:
     if message.text in [ortga, nazad]:
         await state.set_state(Messeage.language)
         if user.interface_language == 'uz':
-            await message.answer(text=uz.get('ask_study_lang'), reply_markup=language_buttons())
+            await message.answer(text=uz.get('ask_study_lang'), reply_markup=language_buttons_uz())
             return
         else:
-            await message.answer(text=ru.get('ask_study_lang'), reply_markup=language_buttons())
+            await message.answer(text=ru.get('ask_study_lang'), reply_markup=language_buttons_ru())
             return
     if  message.text in '':
         await state.set_state(Messeage.education_type)
@@ -616,6 +617,10 @@ async def accept(message: Message, state: FSMContext) -> None:
             f"<b>👨‍👩‍👦‍👦 Universitet haqida kimdan eshitganligi:   </b> {data.get('help_source', '')} ",
             f"<b>🤖 Bot haqida kimdan eshitganligi:   </b> {data.get('bot_source', '')} "
         ]
+        await message.answer(
+            text="\n".join(datas),
+            reply_markup=accept_btn()
+        )
     else:
         await message.answer(text=ru.get('ask_accept'))
         datas = [f"<b>🤵‍♂️ Ф. И. О.:</b> {data.get('full_name')}",
@@ -632,11 +637,11 @@ async def accept(message: Message, state: FSMContext) -> None:
                  f"<b>👨‍👩‍👦‍👦 Откуда узнали об университете:   </b> {data.get('help_source', '')} ",
                  f"<b>🤖 Откуда узнали о боте:   </b> {data.get('bot_source', '')} "
                  ]
+        await message.answer(
+            text="\n".join(datas),
+            reply_markup=accept_btn_ru()
+        )
 
-    await message.answer(
-        text="\n".join(datas),
-        reply_markup=accept_btn()
-    )
 @dp.callback_query(lambda call: call.data == 'accepted')
 async def confirm_handler(call: CallbackQuery, state: FSMContext) -> None:
     data = await state.get_data()
@@ -664,13 +669,12 @@ async def confirm_handler(call: CallbackQuery, state: FSMContext) -> None:
     await state.set_state(MenuState.menu)
 
     if user_temp.interface_language == 'uz':
-        await call.message.edit_text(text="✅ Ma'lumotlaringiz muvaffaqiyatli saqlandi!")
-        return
+        await call.message.edit_text(text="✅ Ma'lumotlaringiz muvaffaqiyatli saqlandi!",reply_markup=None)
     else:
-        await call.message.edit_text(text="✅ Ваши данные успешно сохранены!")
-        return
+        await call.message.edit_text(text="✅ Ваши данные успешно сохранены!",reply_markup=None)
 
     await call.answer()
+    await menu_handler(call.message, state)
 
 
 @dp.callback_query(lambda call: call.data == 'cancelled')
@@ -679,27 +683,12 @@ async def cancel_handler(call: CallbackQuery, state: FSMContext) -> None:
     await state.set_state(MenuState.menu)
 
     if user.interface_language == "uz":
-        await call.message.edit_text(text="❌ Ma'lumotlaringiz bekor qilindi!")
-        return
+        await call.message.edit_text(text="❌ Ma'lumotlaringiz bekor qilindi!",reply_markup=None)
     else:
-        await call.message.edit_text(text="❌ Ваши данные были удалены!")
-        return
+        await call.message.edit_text(text="❌ Ваши данные были удалены!",reply_markup=None)
 
     await call.answer()
+    await menu_handler(call.message, state)
 
 
-# @dp.message(lambda message: message.text == admin_txt)
-# async def Mening_ma(message: Message, state: FSMContext) -> None:
-#     user = User.objects.filter(chat_id=message.from_user.id).first()
-#     if user.role != "ADMIN":
-#         user.role = "ADMIN"
-#         user.save()
-#         await message.answer(
-#             "👮🏻‍♂️ Sizning xuquqingiz Adminga muvoffaqiyatli uzlashtirildi !",
-#             reply_markup=admin_btn()
-#         )
-#     else:
-#         await message.answer(
-#             "👮🏻‍♂️ Admin bulimi !",
-#             reply_markup=admin_btn()
-#         )
+

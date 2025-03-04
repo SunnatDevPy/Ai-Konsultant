@@ -52,12 +52,20 @@ def servis_btn_ru():
     ]
     return ReplyKeyboardMarkup(keyboard=design, resize_keyboard=True)
 
-def age_buttons():
+def age_buttons_uz():
     keyboard1=KeyboardButton(text='17-19')
     keyboard2=KeyboardButton(text='20-22')
     keyboard3=KeyboardButton(text='23-25')
     keyboard4=KeyboardButton(text='25+')
     keyboard5=KeyboardButton(text=ortga)
+    design = [[keyboard1, keyboard2],[keyboard3, keyboard4],[keyboard5]]
+    return ReplyKeyboardMarkup(keyboard=design, resize_keyboard=True)
+def age_buttons_ru():
+    keyboard1=KeyboardButton(text='17-19')
+    keyboard2=KeyboardButton(text='20-22')
+    keyboard3=KeyboardButton(text='23-25')
+    keyboard4=KeyboardButton(text='25+')
+    keyboard5=KeyboardButton(text=nazad)
     design = [[keyboard1, keyboard2],[keyboard3, keyboard4],[keyboard5]]
     return ReplyKeyboardMarkup(keyboard=design, resize_keyboard=True)
 def study_level_buttons_uz():
@@ -156,11 +164,18 @@ def direction_buttons_ru():
     keyboard1 = KeyboardButton(text='test')
     design = [[keyboard1]]
     return ReplyKeyboardMarkup(keyboard=design, resize_keyboard=True)
-def language_buttons():
+def language_buttons_uz():
     keyboard1=KeyboardButton(text="🇺🇿 O‘zbek")
     keyboard2=KeyboardButton(text="🇷🇺 Русский")
     keyboard3=KeyboardButton(text="🇺🇸 English")
     keyboard4=KeyboardButton(text=ortga)
+    design=[[keyboard1,keyboard2],[keyboard3,keyboard4]]
+    return ReplyKeyboardMarkup(keyboard=design,resize_keyboard=True)
+def language_buttons_ru():
+    keyboard1=KeyboardButton(text="🇺🇿 O‘zbek")
+    keyboard2=KeyboardButton(text="🇷🇺 Русский")
+    keyboard3=KeyboardButton(text="🇺🇸 English")
+    keyboard4=KeyboardButton(text=nazad)
     design=[[keyboard1,keyboard2],[keyboard3,keyboard4]]
     return ReplyKeyboardMarkup(keyboard=design,resize_keyboard=True)
 
