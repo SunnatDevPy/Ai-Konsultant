@@ -28,3 +28,5 @@ class Messeage(StatesGroup):
     degree = State()
     certifications_name = State()
     certifications = State()
+    customMessage=State()
+    accept=State()

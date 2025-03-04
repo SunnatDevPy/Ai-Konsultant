@@ -94,3 +94,7 @@ class UniversityApplication(models.Model):
 class TemporaryUser(models.Model):
     interface_language = models.CharField(max_length=10)
     tg_id = models.IntegerField()
+
+class StudyDirections(models.Model):
+    title=models.CharField(max_length=100,unique=True)
+    created_at=models.DateTimeField(auto_now_add=True)

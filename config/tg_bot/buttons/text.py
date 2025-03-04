@@ -4,9 +4,12 @@ File_servis=[uz.get('servis_btn1'),ru.get('servis_btn1')]
 Login_txt = "Login 🖥"
 habarnomalar_txt = 'Habarnomalar'
 orders_list_txt = "Buyurtmalar ro'yxati"
-
-
+univer=['Bakalavriat','Magistratura','Бакалавриат','Степень магистра']
+current=['Maktab', 'Litsey/Kollej', 'Universitet', 'Школа','Средняя школа/колледж','Университет']
+boshqa="Boshqa"
+drugoy="Другой"
 ortga = "🔙 Ortga"
+nazad="🔙 Назад"
 uz_text="🇺🇿 O'zbek"
 ru_text="🇷🇺 Русский"
 employees = "Xodimlar"
