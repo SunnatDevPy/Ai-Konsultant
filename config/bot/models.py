@@ -1,6 +1,5 @@
 from django.db import models
 
-
 class File(models.Model):
     file = models.FileField(upload_to='files')
     created_at = models.DateTimeField(auto_now_add=True)
@@ -94,14 +93,24 @@ class UniversityApplication(models.Model):
 class TemporaryUser(models.Model):
     interface_language = models.CharField(max_length=10)
     tg_id = models.IntegerField()
-
-class StudyDirections(models.Model):
-    title=models.CharField(max_length=100,unique=True)
-    created_at=models.DateTimeField(auto_now_add=True)
-
+    def __str__(self):
+        return self.name
+class StudyDirections_uz(models.Model):
+    name=models.CharField(max_length=100,unique=True)
+    def __str__(self):
+        return self.name
+class StudyDirections_ru(models.Model):
+    name=models.CharField(max_length=100,unique=True)
+    def __str__(self):
+        return self.name
 class ChannelsToSubscribe(models.Model):
     name=models.CharField(max_length=100)
     link=models.CharField(max_length=100)
 
     def __str__(self):
         return self.link
+
+
+class Referral(models.Model):
+    referrer_id = models.ForeignKey(UniversityApplication, on_delete=models.CASCADE, related_name='referrer')
+    referred_user_id = models.ForeignKey(UniversityApplication, on_delete=models.CASCADE, related_name='referred')

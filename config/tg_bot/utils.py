@@ -1,4 +1,3 @@
-import asyncio
 import re
 
 import gspread
@@ -12,6 +11,7 @@ from openai import AsyncOpenAI
 # from dispatcher import TOKEN
 
 file_place = config("FILE_PLACE")
+api_key = config("API_KEY")
 bot = Bot(token='7888133190:AAEo-uhbITqVDpKi_RBerurbXj9IHQR7-A0')
 
 
@@ -98,19 +98,22 @@ def save_to_google_sheets(full_name,
                       bot_source])
 
 
-
-
-async def ask_AI():
+async def ask_AI(content):
     client = AsyncOpenAI(
-        api_key=""
+        api_key=api_key
     )
 
     completion = await client.chat.completions.create(
         model="gpt-4o-mini",
-        messages=[{"role": "user", "content": "Write a haiku about AI"}]
+        messages=[{"role": "user", "content": f"{content}"}]
     )
 
-    print(completion.choices[0].message.content)
+    return completion.choices[0].message.content
 
 
-asyncio.run(ask_AI())
+# def referal_count_filter(need_ref:int,user_id:int)->bool|int:
+#     user=UserModel.objects.filter(tg_id=user_id).first()
+#     if user.referal_count>need_ref:
+#         return True
+#     else:
+#         return need_ref-self.referal_count

@@ -6,12 +6,12 @@ from aiogram.fsm.context import FSMContext
 from aiogram.types import Message
 from aiogram.types import ReplyKeyboardRemove, CallbackQuery
 
-from bot.models import UniversityApplication, TemporaryUser
+from bot.models import UniversityApplication, TemporaryUser, Referral
 from dispatcher import dp
 from tg_bot.buttons.inline import *
 from tg_bot.buttons.reply import *
 from tg_bot.state.main import *
-from tg_bot.test import format_phone_number, passport_number_checker, is_valid_full_name, save_to_google_sheets,check_user_subscription
+from tg_bot.utils import format_phone_number, passport_number_checker, is_valid_full_name, save_to_google_sheets,check_user_subscription
 
 
 # from aiogram.utils.markdown import hlink
@@ -50,6 +50,20 @@ async def start(message: Message, state: FSMContext) -> None:
             reply_markup=language_btn()
         )
         await state.set_state(LanguageState.language)
+
+    if ' ' in message.text:
+        args = message.text.split(' ')[1]
+        print(args)
+    else:
+        args = None
+
+    if args:
+        inviter_id = int(args)
+        referred = Referral.objects.filter(referrer_id=inviter_id, referred_user_id=message.from_user.id).first()
+        if referred == None:
+            Referral.objects.create(referrer_id=inviter_id, referred_user_id=message.from_user.id)
+        else:
+            await state.update_data(referred_id=inviter_id, referred_user_id=message.from_user.id)
 
 
 @dp.message(StateFilter(LanguageState.language))
@@ -101,7 +115,7 @@ async def menu_handler(message: Message, state: FSMContext) -> None:
 
     if not user:
         await message.answer(
-            text="Tizimda xatolik yuz berdi. Botni qayta ishga tushuring.\nПроизошла системная ошибка. Перезапустите бота. /start")
+            text="Tizimda xatolik yuz berdi. Botni qayta ishga tushuring.\nПроизошла системная ошибка. Перезапустите бота. /start",reply_markup=ReplyKeyboardRemove())
 
     if user.interface_language == "uz":
         await message.answer(
@@ -130,7 +144,7 @@ async def servis(message: Message, state: FSMContext) -> None:
             await message.answer(text=ru.get('name_ask'), reply_markup=back_ru())
 
     elif message.text in File_servis:
-        await message.answer(text='file')
+        await message.answer(text='file',reply_markup=referral_btn(message.from_user.id))
     else:
         await message.answer(text='Ai')
 
@@ -612,13 +626,13 @@ async def source(message: Message, state: FSMContext) -> None:
             return
     if message.text in [boshqa, drugoy]:
         await state.set_state(Messeage.customMessage)
+        await custom(message, state)
         return
 
     data = await state.get_data()
     data['bot_source'] = message.text
     await state.set_data(data)
     await state.set_state(Messeage.accept)
-
     await accept(message, state)
 
 
@@ -658,6 +672,7 @@ async def accept(message: Message, state: FSMContext) -> None:
             f"<b>🧬 Tanlagan yo'nalishi:   </b> {data.get('desired_major', '')}",
             f"<b>🔠 Ta'lim tili:   </b> {data.get('education_language', '')}",
             f"<b>⏳ Ta'lim shakli:   </b> {data.get('study_mode', '')}",
+            f"<b>💎 Imkoniyat turi:   </b> {data.get('financial_aid', '')}",
             f"<b>💼 Universitet tanlashdagi eng muxim omil:   </b> {data.get('important_factor', '')}",
             f"<b>👨‍👩‍👦‍👦 Universitet haqida kimdan eshitganligi:   </b> {data.get('help_source', '')} ",
             f"<b>🤖 Bot haqida kimdan eshitganligi:   </b> {data.get('bot_source', '')} "
@@ -678,6 +693,7 @@ async def accept(message: Message, state: FSMContext) -> None:
                  f"<b>🧬 Выбранное направление:   </b> {data.get('desired_major', '')}",
                  f"<b>🔠 Язык обучения:   </b> {data.get('education_language', '')}",
                  f"<b>⏳ Форма обучения:   </b> {data.get('study_mode', '')}",
+                 f"<b>💎 Тип возможности:   </b> {data.get('financial_aid', '')}",
                  f"<b>💼 Самый важный фактор при выборе университета:   </b> {data.get('important_factor', '')}",
                  f"<b>👨‍👩‍👦‍👦 Откуда узнали об университете:   </b> {data.get('help_source', '')} ",
                  f"<b>🤖 Откуда узнали о боте:   </b> {data.get('bot_source', '')} "

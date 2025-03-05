@@ -1,8 +1,6 @@
 from aiogram.client.context_controller import BotContextController
 from celery import shared_task
 from datetime import datetime, timedelta
-from aiogram import Bot
-from django.conf import settings
 
 
 @shared_task

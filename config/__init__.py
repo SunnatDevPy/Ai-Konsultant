@@ -1,1 +1,1 @@
-from tg_bot.test import *
+from tg_bot.utils import *

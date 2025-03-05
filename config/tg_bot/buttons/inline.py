@@ -1,7 +1,7 @@
-from tg_bot.test import remove_at_prefix
+from tg_bot.utils import remove_at_prefix
 from bot.models import ChannelsToSubscribe
 from aiogram.types import InlineKeyboardButton, InlineKeyboardMarkup
-
+from aiogram.utils.keyboard import InlineKeyboardBuilder
 
 
 def accept_btn():
@@ -23,3 +23,9 @@ def join_channels():
         for channel in channels
     ]
     return InlineKeyboardMarkup(inline_keyboard=[buttons])
+
+def referral_btn(user_id):
+    ikb = InlineKeyboardBuilder()
+    ikb.row(InlineKeyboardButton(text='Referal',
+                                 url=f"https://t.me/share/url?url=https://t.me/ricoin_bot?start={user_id}"))
+    return ikb.as_markup()

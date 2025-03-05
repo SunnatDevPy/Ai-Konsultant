@@ -1,16 +1,11 @@
 from aiogram.types import KeyboardButton, ReplyKeyboardMarkup
-from bot.models import  StudyDirections
+from bot.models import  StudyDirections_uz,StudyDirections_ru
 from tg_bot.buttons.text import *
 from tg_bot.language_db import uz,ru
 
 
 
-def menu_btn():
-    k2 = KeyboardButton(text = orders_list_txt)
-    design = [
-        [k2],
-    ]
-    return ReplyKeyboardMarkup(keyboard=design , resize_keyboard=True)
+
 
 def phone_number_btn_uz():
     keyboard1=KeyboardButton(text = "Raqamni yuborish 📞",request_contact=True)
@@ -33,22 +28,24 @@ def language_btn():
 def servis_btn_uz():
     keyboard1=KeyboardButton(text=uz.get('servis_btn1'))
     keyboard2=KeyboardButton(text=uz.get('servis_btn2'))
+    keyboard4=KeyboardButton(text=uz.get('ask_fill_info'))
     keyboard3=KeyboardButton(text=uz.get('lang_change'))
     design = [
         [keyboard1],
         [keyboard2],
-        [keyboard3],
+        [keyboard4,keyboard3]
     ]
     return ReplyKeyboardMarkup(keyboard=design, resize_keyboard=True)
 
 def servis_btn_ru():
     keyboard1=KeyboardButton(text=ru.get('servis_btn1'))
     keyboard2=KeyboardButton(text=ru.get('servis_btn2'))
+    keyboard4 = KeyboardButton(text=uz.get('ask_fill_info'))
     keyboard3 = KeyboardButton(text=ru.get('lang_change'))
     design = [
         [keyboard1],
         [keyboard2],
-        [keyboard3],
+        [keyboard4,keyboard3]
     ]
     return ReplyKeyboardMarkup(keyboard=design, resize_keyboard=True)
 
@@ -148,22 +145,21 @@ def region_buttons_ru():
               [keyboard15]]
     return ReplyKeyboardMarkup(keyboard=design, resize_keyboard=True)
 
-
 def direction_buttons_uz():
-    # directions = StudyDirections.objects.all()
-    # keyboard = ReplyKeyboardMarkup(resize_keyboard=True)
-    # for direction in directions:
-    #     keyboard.add(KeyboardButton(text=direction.title))
-    # return keyboard
-    keyboard1=KeyboardButton(text='test')
-    design=[[keyboard1]]
-    return ReplyKeyboardMarkup(keyboard=design,resize_keyboard=True)
-
+    directions = StudyDirections_uz.objects.all()
+    buttons = [KeyboardButton(text=direction.name) for direction in directions]
+    buttons.append(KeyboardButton(text=ortga))
+    keyboard = [buttons[i:i + 2] for i in range(0, len(buttons), 2)]
+    return ReplyKeyboardMarkup(keyboard=keyboard, resize_keyboard=True)
 
 def direction_buttons_ru():
-    keyboard1 = KeyboardButton(text='test')
-    design = [[keyboard1]]
-    return ReplyKeyboardMarkup(keyboard=design, resize_keyboard=True)
+    directions = StudyDirections_ru.objects.all()
+    buttons = [KeyboardButton(text=direction.name) for direction in directions]
+    buttons.append(KeyboardButton(text=nazad))
+    keyboard = [buttons[i:i + 2] for i in range(0, len(buttons), 2)]
+    return ReplyKeyboardMarkup(keyboard=keyboard, resize_keyboard=True)
+
+
 def language_buttons_uz():
     keyboard1=KeyboardButton(text="🇺🇿 O‘zbek")
     keyboard2=KeyboardButton(text="🇷🇺 Русский")
@@ -180,86 +176,86 @@ def language_buttons_ru():
     return ReplyKeyboardMarkup(keyboard=design,resize_keyboard=True)
 
 def education_type_buttons_uz():
-    keyboard1 = KeyboardButton(text="Kunduzgi")
-    keyboard2 = KeyboardButton(text="Kechki")
-    keyboard3 = KeyboardButton(text="Sirtqi")
-    keyboard4 = KeyboardButton(text="Masofaviy")
+    keyboard1 = KeyboardButton(text="🏞 Kunduzgi")
+    keyboard2 = KeyboardButton(text="🌃 Kechki")
+    keyboard3 = KeyboardButton(text="⛺️ Sirtqi")
+    keyboard4 = KeyboardButton(text="🛣 Masofaviy")
     keyboard5 = KeyboardButton(text=ortga)
     design = [[keyboard1, keyboard2], [keyboard3, keyboard4],[keyboard5]]
     return ReplyKeyboardMarkup(keyboard=design, resize_keyboard=True)
 def education_type_buttons_ru():
-    keyboard1 = KeyboardButton(text="Дневное время")
+    keyboard1 = KeyboardButton(text="🏞 Дневное время")
     keyboard2 = KeyboardButton(text=".")
-    keyboard3 = KeyboardButton(text="Внешне")
-    keyboard4 = KeyboardButton(text="Удаленный")
+    keyboard3 = KeyboardButton(text="⛺️ Внешне")
+    keyboard4 = KeyboardButton(text="🛣 Удаленный")
     keyboard5 = KeyboardButton(text=nazad)
     design = [[keyboard1, keyboard2], [keyboard3, keyboard4], [keyboard5]]
     return ReplyKeyboardMarkup(keyboard=design, resize_keyboard=True)
 def application_type_buttons_uz():
-    keyboard1=KeyboardButton(text="Grant")
-    keyboard2=KeyboardButton(text="Kontrakt")
-    keyboard3=KeyboardButton(text="Ikkalasiga ham topshiraman")
+    keyboard1=KeyboardButton(text="💲 Grant")
+    keyboard2=KeyboardButton(text="🔖 Kontrakt")
+    keyboard3=KeyboardButton(text="🧮 Ikkalasiga ham topshiraman")
     keyboard4=KeyboardButton(text=ortga)
     design=[[keyboard1,keyboard2],[keyboard3,keyboard4]]
     return ReplyKeyboardMarkup(keyboard=design,resize_keyboard=True)
 def application_type_buttons_ru():
-    keyboard1 = KeyboardButton(text="Грант")
-    keyboard2 = KeyboardButton(text="Kонтракт")
-    keyboard3 = KeyboardButton(text="Я подчиняюсь обоим")
+    keyboard1 = KeyboardButton(text="💲 Грант")
+    keyboard2 = KeyboardButton(text="🔖 Kонтракт")
+    keyboard3 = KeyboardButton(text="🧮 Я подчиняюсь обоим")
     keyboard4=KeyboardButton(text=nazad)
     design = [[keyboard1, keyboard2], [keyboard3,keyboard4]]
     return ReplyKeyboardMarkup(keyboard=design, resize_keyboard=True)
 def university_priority_buttons_uz():
-    keyboard1=KeyboardButton(text="Joylashuv")
-    keyboard2=KeyboardButton(text="Kontrakt narxi")
-    keyboard3=KeyboardButton(text="Ta’lim sifati")
-    keyboard4=KeyboardButton(text="Grant imkoniyatlari")
-    keyboard5=KeyboardButton(text="Xalqaro diplom")
-    keyboard6=KeyboardButton(text="Universitet obro‘si")
+    keyboard1=KeyboardButton(text="📍 Joylashuv")
+    keyboard2=KeyboardButton(text="📉 Kontrakt narxi")
+    keyboard3=KeyboardButton(text="📖 Ta’lim sifati")
+    keyboard4=KeyboardButton(text="💱 Grant imkoniyatlari")
+    keyboard5=KeyboardButton(text="🌐 Xalqaro diplom")
+    keyboard6=KeyboardButton(text="📌 Universitet obro‘si")
     keyboard7=KeyboardButton(text=ortga)
     design=[[keyboard1,keyboard2],[keyboard3,keyboard4],[keyboard5,keyboard6],[keyboard7]]
     return ReplyKeyboardMarkup(keyboard=design,resize_keyboard=True)
 def university_priority_buttons_ru():
-    keyboard1 = KeyboardButton(text="Расположение")
-    keyboard2 = KeyboardButton(text="Цена контракта")
-    keyboard3 = KeyboardButton(text="Качество образования")
-    keyboard4 = KeyboardButton(text="Возможности стипендии")
-    keyboard5 = KeyboardButton(text="Международный диплом")
-    keyboard6 = KeyboardButton(text="Репутация университета")
+    keyboard1 = KeyboardButton(text="📍 Расположение")
+    keyboard2 = KeyboardButton(text="📉 Цена контракта")
+    keyboard3 = KeyboardButton(text="📖 Качество образования")
+    keyboard4 = KeyboardButton(text="💱 Возможности стипендии")
+    keyboard5 = KeyboardButton(text="🌐 Международный диплом")
+    keyboard6 = KeyboardButton(text="📌 Репутация университета")
     keyboard7 = KeyboardButton(text=nazad)
     design = [[keyboard1, keyboard2], [keyboard3, keyboard4], [keyboard5, keyboard6], [keyboard7]]
     return ReplyKeyboardMarkup(keyboard=design, resize_keyboard=True)
 def assistance_buttons_uz():
-    keyboard1=KeyboardButton(text="O‘zim mustaqil qaror qilaman")
-    keyboard2=KeyboardButton(text="Ota-onam")
-    keyboard3=KeyboardButton(text="Ustozlarim")
-    keyboard4=KeyboardButton(text="Do‘stlarim")
+    keyboard1=KeyboardButton(text="🙍 O‘zim mustaqil qaror qilaman")
+    keyboard2=KeyboardButton(text="👨‍👩‍👦‍👦 Ota-onam")
+    keyboard3=KeyboardButton(text="👩‍🏫 Ustozlarim")
+    keyboard4=KeyboardButton(text="👫 Do‘stlarim")
     keyboard5=KeyboardButton(text=ortga)
     design=[[keyboard1],[keyboard2,keyboard3],[keyboard4,keyboard5]]
     return ReplyKeyboardMarkup(keyboard=design,resize_keyboard=True)
 def assistance_buttons_ru():
-    keyboard1 = KeyboardButton(text="Я принимаю свое самостоятельное решение")
-    keyboard2 = KeyboardButton(text="Мои родители")
-    keyboard3 = KeyboardButton(text="Мои учителя")
-    keyboard4 = KeyboardButton(text="Мои друзья")
+    keyboard1 = KeyboardButton(text="🙍 Я принимаю свое самостоятельное решение")
+    keyboard2 = KeyboardButton(text="👨‍👩‍👦‍👦 Мои родители")
+    keyboard3 = KeyboardButton(text="👩‍🏫 Мои учителя")
+    keyboard4 = KeyboardButton(text="👫 Мои друзья")
     keyboard5 = KeyboardButton(text=nazad)
     design = [[keyboard1], [keyboard2, keyboard3], [keyboard4, keyboard5]]
     return ReplyKeyboardMarkup(keyboard=design, resize_keyboard=True)
 def source_buttons_uz():
-    keyboard1 = KeyboardButton(text="Instagram")
-    keyboard2 = KeyboardButton(text="Telegram")
-    keyboard3 = KeyboardButton(text="Google / Yandex")
-    keyboard4 = KeyboardButton(text="Do‘stim tavsiya qildi")
-    keyboard5 = KeyboardButton(text="Boshqa")
+    keyboard1 = KeyboardButton(text="📸 Instagram")
+    keyboard2 = KeyboardButton(text="🛫 Telegram")
+    keyboard3 = KeyboardButton(text="🔎 Google / Yandex")
+    keyboard4 = KeyboardButton(text="👫 Do‘stim tavsiya qildi")
+    keyboard5 = KeyboardButton(text="✍️ Boshqa")
     keyboard6 = KeyboardButton(text=ortga)
     design = [[keyboard1,keyboard2], [keyboard3, keyboard4], [keyboard5, keyboard6]]
     return ReplyKeyboardMarkup(keyboard=design, resize_keyboard=True)
 def source_buttons_ru():
-    keyboard1 = KeyboardButton(text="Инстаграм")
-    keyboard2 = KeyboardButton(text="Телеграм")
-    keyboard3 = KeyboardButton(text="Google/Яндекс")
-    keyboard4 = KeyboardButton(text="Мой друг рекомендовал это")
-    keyboard5 = KeyboardButton(text="Другой")
+    keyboard1 = KeyboardButton(text="📸 Инстаграм")
+    keyboard2 = KeyboardButton(text="🛫 Телеграм")
+    keyboard3 = KeyboardButton(text="🔎 Google/Яндекс")
+    keyboard4 = KeyboardButton(text="👫 Мой друг рекомендовал это")
+    keyboard5 = KeyboardButton(text="✍️ Другой")
     keyboard6 = KeyboardButton(text=nazad)
     design = [[keyboard1, keyboard2], [keyboard3, keyboard4], [keyboard5, keyboard6]]
     return ReplyKeyboardMarkup(keyboard=design, resize_keyboard=True)
