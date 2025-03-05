@@ -13,19 +13,27 @@ def accept_btn_ru():
     cancel = InlineKeyboardButton(text = "🗑 Отмена данных", callback_data="cancelled")
     return InlineKeyboardMarkup(inline_keyboard=[[accept], [cancel]])
 
+
 def join_channels():
     channels = ChannelsToSubscribe.objects.all()
+
     buttons = [
-        InlineKeyboardButton(
+        [InlineKeyboardButton(
             text=channel.name,
             url=f"https://t.me/{remove_at_prefix(channel.link)}"
-        )
-        for channel in channels
+        )] for channel in channels
     ]
-    return InlineKeyboardMarkup(inline_keyboard=[buttons])
+
+    buttons.append([InlineKeyboardButton(
+        text="✅ Tekshirish",
+        callback_data="check_subscription"
+    )])
+
+    return InlineKeyboardMarkup(inline_keyboard=buttons)
 
 def referral_btn(user_id):
     ikb = InlineKeyboardBuilder()
     ikb.row(InlineKeyboardButton(text='Referal',
                                  url=f"https://t.me/share/url?url=https://t.me/ricoin_bot?start={user_id}"))
+
     return ikb.as_markup()

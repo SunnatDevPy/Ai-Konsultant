@@ -23,11 +23,13 @@ uz = {
     "ask_name_again": "✍️ Ism faqat harfdan tashkil topishi mumkin. \nQaytadan kiriting.",
     "number_ask_again": "📲 Telefon raqamingizni to'g'ri kiriting!",
     "ask_number_again": "🚫 Kiritgan raqamingiz oldingisi bilan bir xil bo'la olmaydi!",
-    "ask_sub": "🔊 Barcha kanallarga a'zo bo'ling va /start ni qaytadan bosing!",
+    "ask_sub": "🔊 Kanalga a’zo bo‘lish!",
     "ask_sub1": "📝 Siz hozir O’zbekistondagi eng katta abituriyentlar jamiyatiga qo‘shilmoqchisiz! \n✅ Universitetlar haqida eng so‘nggi ma’lumotlar \n✅ Grant va kontrakt imkoniyatlari bo‘yicha maslahatlar \n✅ Kirish imtihonlariga tayyorlanish uchun bepul resurslar \n✅ 24/7 AI Konsultant",
     "ask_fill_info": "✍️ Malumotlarni to'ldirish!",
     "see_info": "📄 Mening ma'lumotlarim.",
-    "score": "💰 Mening ballarim"
+    "score": "💰 Mening ballarim",
+    "didnt_sub":"❌ Siz hali ham kanalga a'zo bo‘lmadingiz!",
+    "ask_fill":"❌ Bu xizmatdan foydalanish uchun oldin malumotlaringizni to'ldiring!"
 
 }
 
@@ -56,9 +58,11 @@ ru = {
     "ask_name_again": "✍️ Имя может состоять только из букв. \nПовторно введите.",
     "number_ask_again": "📲 Введите свой номер телефона правильно!",
     "ask_number_again": "🚫 Введенный вами номер не может совпадать с предыдущим!",
-    "ask_sub": "🔊 Подписывайтесь на все каналы и снова нажмите /start!",
+    "ask_sub": "🔊 Подпишитесь на канал!",
     "ask_sub1": "📝Вы хотите присоединиться к крупнейшему сообществу абитуриентов Узбекистана! \n ✅ Самая свежая информация об университетах \n ✅ Консультации по поводу стипендии и возможностей контракта \n ✅ Бесплатные ресурсы для подготовки к вступительным экзаменам \n ✅ Консультант по искусственному интеллекту 24/7",
     "ask_fill_info": "✍️ Заполнение данных!",
     "see_info": "📄 Моя информация.",
-    "score": "💰 Мой счет."
+    "score": "💰 Мой счет.",
+    "didnt_sub":"❌ Вы еще не являетесь участником канала!",
+"ask_fill":"❌ Сначала заполните свою информацию, чтобы воспользоваться этой услугой!"
 }

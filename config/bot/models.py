@@ -112,5 +112,11 @@ class ChannelsToSubscribe(models.Model):
 
 
 class Referral(models.Model):
-    referrer_id = models.ForeignKey(UniversityApplication, on_delete=models.CASCADE, related_name='referrer')
-    referred_user_id = models.ForeignKey(UniversityApplication, on_delete=models.CASCADE, related_name='referred')
+    referrer_id = models.IntegerField()
+    referred_user_id = models.IntegerField()
+
+class AllUsersTgId(models.Model):
+    tg_id=models.IntegerField()
+
+    def __str__(self):
+        return self.tg_id

@@ -72,7 +72,6 @@ def save_to_google_sheets(full_name,
                           financial_aid,
                           important_factor,
                           help_source,
-                          tg_id,
                           bot_source):
     scope = ["https://spreadsheets.google.com/feeds", "https://www.googleapis.com/auth/drive"]
     creds = ServiceAccountCredentials.from_json_keyfile_name(filename=file_place)
@@ -94,7 +93,6 @@ def save_to_google_sheets(full_name,
                       financial_aid,
                       important_factor,
                       help_source,
-                      tg_id,
                       bot_source])
 
 
@@ -117,3 +115,27 @@ async def ask_AI(content):
 #         return True
 #     else:
 #         return need_ref-self.referal_count
+
+
+# args = message.text.split()
+    # referrer_id = args[1] if len(args) > 1 else None  # Extract referral ID
+    #
+    # new_user, created = TemporaryUser.objects.get_or_create(
+    #     tg_id=message.from_user.id,
+    #     defaults={"full_name": message.from_user.full_name},
+    # )
+    #
+    # if created and referrer_id:
+    #     referrer = TemporaryUser.objects.filter(tg_id=referrer_id).first()
+    #     if referrer:
+    #         new_user.referred_by = referrer
+    #         new_user.save()
+    #
+    #
+    #         try:
+    #             await bot.send_message(
+    #                 chat_id=referrer.tg_id,
+    #                 text=f"🎉 {new_user.full_name} joined using your referral link! Keep inviting more friends!",
+    #             )
+    #         except Exception as e:
+    #             print(f"Error notifying referrer: {e}")

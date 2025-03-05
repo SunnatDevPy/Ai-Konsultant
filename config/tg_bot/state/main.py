@@ -9,7 +9,8 @@ class MenuState(StatesGroup):
 
 class Subscribe(StatesGroup):
     subscribe = State()
-
+class Info(StatesGroup):
+    info = State()
 class Messeage(StatesGroup):
     age=State()
     study_level=State()

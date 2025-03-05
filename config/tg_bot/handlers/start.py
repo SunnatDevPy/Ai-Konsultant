@@ -5,42 +5,49 @@ from aiogram.fsm.context import FSMContext
 # from aiogram.filters import Command
 from aiogram.types import Message
 from aiogram.types import ReplyKeyboardRemove, CallbackQuery
-
-from bot.models import UniversityApplication, TemporaryUser, Referral
+from bot.models import UniversityApplication, TemporaryUser, Referral,AllUsersTgId
 from dispatcher import dp
 from tg_bot.buttons.inline import *
 from tg_bot.buttons.reply import *
 from tg_bot.state.main import *
-from tg_bot.utils import format_phone_number, passport_number_checker, is_valid_full_name, save_to_google_sheets,check_user_subscription
+from tg_bot.utils import format_phone_number, passport_number_checker, is_valid_full_name, save_to_google_sheets,check_user_subscription,bot
+from aiogram.filters.command import Command
 
 
 # from aiogram.utils.markdown import hlink
 
-@dp.message(lambda msg: msg.text == "/start", StateFilter(None))
+@dp.message(Command("start"), StateFilter(None))
 async def start(message: Message, state: FSMContext) -> None:
+    idlar=AllUsersTgId.objects.all()
+    idlar_list=[id for id in idlar]
+    if message.from_user.id not in idlar_list:
+        ids=AllUsersTgId.objects.create(tg_id=message.from_user.id)
+        ids.save()
     user = TemporaryUser.objects.filter(tg_id=message.from_user.id).first()
-    # args = message.text.split()
-    # referrer_id = args[1] if len(args) > 1 else None  # Extract referral ID
-    #
-    # new_user, created = TemporaryUser.objects.get_or_create(
-    #     tg_id=message.from_user.id,
-    #     defaults={"full_name": message.from_user.full_name},
-    # )
-    #
-    # if created and referrer_id:
-    #     referrer = TemporaryUser.objects.filter(tg_id=referrer_id).first()
-    #     if referrer:
-    #         new_user.referred_by = referrer
-    #         new_user.save()
-    #
-    #
-    #         try:
-    #             await bot.send_message(
-    #                 chat_id=referrer.tg_id,
-    #                 text=f"🎉 {new_user.full_name} joined using your referral link! Keep inviting more friends!",
-    #             )
-    #         except Exception as e:
-    #             print(f"Error notifying referrer: {e}")
+    if ' ' in message.text:
+        args = message.text.split(' ')[1]
+        print(f"Args found: {args}")
+    else:
+        args = None
+
+    if args:
+        try:
+            inviter_id = int(args)
+            print(f"Inviter ID: {inviter_id}, User ID: {message.from_user.id}")
+
+            referred = Referral.objects.filter(
+                referrer_id=inviter_id, referred_user_id=message.from_user.id
+            ).first()
+
+            if referred is None and message.from_user.id not in idlar_list:
+                Referral.objects.create(referrer_id=inviter_id, referred_user_id=message.from_user.id)
+                await bot.send_message(chat_id=inviter_id, text=f"🥳 Tabriklayman sizning referalingiz orqali {message.from_user.full_name} ro'yxatdan o'tdi." )
+                print("Referral created successfully")
+            else:
+                await state.update_data(referred_id=inviter_id, referred_user_id=message.from_user.id)
+                print("Referral already exists, updated state")
+        except ValueError:
+            print(f"Invalid inviter ID: {args}")
     if user:
         await state.set_state(Subscribe.subscribe)
         await sub(message, state)
@@ -51,19 +58,6 @@ async def start(message: Message, state: FSMContext) -> None:
         )
         await state.set_state(LanguageState.language)
 
-    if ' ' in message.text:
-        args = message.text.split(' ')[1]
-        print(args)
-    else:
-        args = None
-
-    if args:
-        inviter_id = int(args)
-        referred = Referral.objects.filter(referrer_id=inviter_id, referred_user_id=message.from_user.id).first()
-        if referred == None:
-            Referral.objects.create(referrer_id=inviter_id, referred_user_id=message.from_user.id)
-        else:
-            await state.update_data(referred_id=inviter_id, referred_user_id=message.from_user.id)
 
 
 @dp.message(StateFilter(LanguageState.language))
@@ -88,7 +82,21 @@ async def select_language(message: Message, state: FSMContext) -> None:
     await state.set_state(MenuState.menu)
     await menu_handler(message, state)
 
+@dp.callback_query(lambda c: c.data == "check_subscription")
+async def check_subscription(callback: CallbackQuery, state: FSMContext):
+    user_temp = TemporaryUser.objects.filter(tg_id=callback.from_user.id).first()
+    user_id = callback.from_user.id
+    channels = list(ChannelsToSubscribe.objects.values_list("link", flat=True))
+    subscription_results = await check_user_subscription(user_id, channels)
 
+    if all(subscription_results.values()):
+        await state.set_state(MenuState.menu)
+        await callback.message.delete()
+        await menu_handler(callback.message, state)
+    else:
+        lang = (user_temp.interface_language or "uz")
+        text = uz.get("didnt_sub") if lang == "uz" else ru.get("didnt_sub")
+        await callback.answer(text=text, show_alert=True)
 
 @dp.message(StateFilter(Subscribe.subscribe))
 async def sub(message: Message, state: FSMContext) -> None:
@@ -114,19 +122,18 @@ async def menu_handler(message: Message, state: FSMContext) -> None:
     user = TemporaryUser.objects.filter(tg_id=message.from_user.id).first()
 
     if not user:
-        await message.answer(
-            text="Tizimda xatolik yuz berdi. Botni qayta ishga tushuring.\nПроизошла системная ошибка. Перезапустите бота. /start",reply_markup=ReplyKeyboardRemove())
+        await start(message, state)
 
     if user.interface_language == "uz":
         await message.answer(
             text=uz.get('servis'),
-            reply_markup=servis_btn_uz()
+            reply_markup=servis_btn_uz(message.from_user.id)
         )
 
     else:
         await message.answer(
             text=ru.get('servis'),
-            reply_markup=servis_btn_ru()
+            reply_markup=servis_btn_ru(message.from_user.id)
         )
 
     await state.clear()
@@ -137,11 +144,10 @@ async def servis(message: Message, state: FSMContext) -> None:
     user_temp = TemporaryUser.objects.filter(tg_id=message.from_user.id).first()
     user = UniversityApplication.objects.filter(tg_id=message.from_user.id).first()
     if not user:
-        await state.set_state(Messeage.full_name)
         if user_temp.interface_language == 'uz':
-            await message.answer(text=uz.get('name_ask'), reply_markup=back_uz())
+            await message.answer(text=uz.get('ask_fill'))
         else:
-            await message.answer(text=ru.get('name_ask'), reply_markup=back_ru())
+            await message.answer(text=ru.get('ask_fill'))
 
     elif message.text in File_servis:
         await message.answer(text='file',reply_markup=referral_btn(message.from_user.id))
@@ -160,6 +166,16 @@ async def Mening_ma(message: Message, state: FSMContext) -> None:
         text="Tilni tanlang 🇺🇿\nВыберите язык 🇷🇺",
         reply_markup=language_btn()
     )
+
+
+@dp.message(lambda message: message.text in (uz.get('ask_fill_info'), ru.get('ask_fill_info')))
+async def begin_fill(message: Message, state: FSMContext) -> None:
+    user_temp = TemporaryUser.objects.filter(tg_id=message.from_user.id).first()
+    await state.set_state(Messeage.full_name)
+    if user_temp.interface_language == 'uz':
+        await message.answer(text=uz.get('name_ask'),reply_markup=back_uz())
+    else:
+        await message.answer(text=ru.get('name_ask'),reply_markup=back_ru())
 
 
 @dp.message(StateFilter(Messeage.full_name))
@@ -707,8 +723,8 @@ async def accept(message: Message, state: FSMContext) -> None:
 @dp.callback_query(lambda call: call.data == 'accepted')
 async def confirm_handler(call: CallbackQuery, state: FSMContext) -> None:
     data = await state.get_data()
+    data['tg_id'] = call.from_user.id
     user_temp = TemporaryUser.objects.filter(tg_id=call.from_user.id).first()
-    data["tg_id"] = call.from_user.id
     user = UniversityApplication.objects.create(**data)
     user.save()
 
@@ -737,3 +753,62 @@ async def cancel_handler(call: CallbackQuery, state: FSMContext) -> None:
 
     await call.answer()
     await menu_handler(call.message, state)
+
+
+@dp.message(lambda message: message.text in (uz.get('see_info'), ru.get('see_info')))
+async def info(message: Message, state: FSMContext) -> None:
+    user = UniversityApplication.objects.filter(tg_id=message.from_user.id).first()
+    user_temp = TemporaryUser.objects.filter(tg_id=message.from_user.id).first()
+
+    if not user:
+        await message.answer(text="❌ Ma'lumot topilmadi! /start ni bosing.")
+        return
+
+    if user_temp and user_temp.interface_language == 'uz':
+        datas = [
+            f"<b>🤵‍♂️ F. I. O. :   </b> {user.full_name}",
+            f"<b>🪪 Passport raqami:   </b> {user.passport_number}",
+            f"<b>📞 Telefon raqamlar:   </b> {user.phone_number} - {user.additional_phone_number}",
+            f"<b>🔢 Yosh oralig'i:   </b> {user.age}",
+            f"<b>🏛 Ta'lim bosqichi:   </b> {user.education_level}",
+            f"<b>🏢 Hozirgi o'qish joyi:   </b> {user.current_education}",
+            f"<b>🏠 Yashash joyi:   </b> {user.region}",
+            f"<b>🧬 Tanlagan yo'nalishi:   </b> {user.desired_major}",
+            f"<b>🔠 Ta'lim tili:   </b> {user.education_language}",
+            f"<b>⏳ Ta'lim shakli:   </b> {user.study_mode}",
+            f"<b>💎 Imkoniyat turi:   </b> {user.financial_aid}",
+            f"<b>💼 Universitet tanlashdagi eng muxim omil:   </b> {user.important_factor}",
+            f"<b>👨‍👩‍👦‍👦 Universitet haqida kimdan eshitganligi:   </b> {user.help_source}",
+            f"<b>🤖 Bot haqida kimdan eshitganligi:   </b> {user.bot_source}"
+        ]
+        text = "\n".join(datas)
+        await message.answer(text=text)
+
+    else:
+        datas = [
+            f"<b>🤵‍♂️ Ф. И. О.:   </b> {user.full_name}",
+            f"<b>🪪 Номер паспорта:   </b> {user.passport_number}",
+            f"<b>📞 Номера телефонов:   </b> {user.phone_number} - {user.additional_phone_number}",
+            f"<b>🔢 Возрастной диапазон:   </b> {user.age}",
+            f"<b>🏛 Уровень образования:   </b> {user.education_level}",
+            f"<b>🏢 Текущее место учебы:   </b> {user.current_education}",
+            f"<b>🏠 Место проживания:   </b> {user.region}",
+            f"<b>🧬 Выбранное направление:   </b> {user.desired_major}",
+            f"<b>🔠 Язык обучения:   </b> {user.education_language}",
+            f"<b>⏳ Форма обучения:   </b> {user.study_mode}",
+            f"<b>💎 Тип возможности:   </b> {user.financial_aid}",
+            f"<b>💼 Самый важный фактор при выборе университета:   </b> {user.important_factor}",
+            f"<b>👨‍👩‍👦‍👦 Откуда узнали об университете:   </b> {user.help_source}",
+            f"<b>🤖 Откуда узнали о боте:   </b> {user.bot_source}"
+        ]
+        text = "\n".join(datas)
+        await message.answer(text=text)
+        await state.set_state(MenuState.menu)
+
+@dp.message(lambda message: message.text in (uz.get('servis_btn1'), ru.get('servis_btn1')))
+async def info(message: Message, state: FSMContext) -> None:
+    pass
+
+@dp.message(lambda message: message.text in (uz.get('servis_btn2'), ru.get('servis_btn2')))
+async def info(message: Message, state: FSMContext) -> None:
+    pass

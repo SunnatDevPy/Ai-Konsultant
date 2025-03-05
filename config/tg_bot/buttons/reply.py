@@ -1,5 +1,5 @@
 from aiogram.types import KeyboardButton, ReplyKeyboardMarkup
-from bot.models import  StudyDirections_uz,StudyDirections_ru
+from bot.models import  StudyDirections_uz,StudyDirections_ru,UniversityApplication
 from tg_bot.buttons.text import *
 from tg_bot.language_db import uz,ru
 
@@ -25,10 +25,12 @@ def language_btn():
     design = [[keyboard1, keyboard2]]
     return ReplyKeyboardMarkup(keyboard=design, resize_keyboard=True)
 
-def servis_btn_uz():
+def servis_btn_uz(user_id):
+    user = UniversityApplication.objects.filter(tg_id=user_id).first()
     keyboard1=KeyboardButton(text=uz.get('servis_btn1'))
     keyboard2=KeyboardButton(text=uz.get('servis_btn2'))
-    keyboard4=KeyboardButton(text=uz.get('ask_fill_info'))
+    keyboard4_text = uz.get('see_info') if user else uz.get('ask_fill_info')
+    keyboard4 = KeyboardButton(text=keyboard4_text)
     keyboard3=KeyboardButton(text=uz.get('lang_change'))
     design = [
         [keyboard1],
@@ -37,10 +39,12 @@ def servis_btn_uz():
     ]
     return ReplyKeyboardMarkup(keyboard=design, resize_keyboard=True)
 
-def servis_btn_ru():
+def servis_btn_ru(user_id):
+    user = UniversityApplication.objects.filter(tg_id=user_id).first()
     keyboard1=KeyboardButton(text=ru.get('servis_btn1'))
     keyboard2=KeyboardButton(text=ru.get('servis_btn2'))
-    keyboard4 = KeyboardButton(text=uz.get('ask_fill_info'))
+    keyboard4_text = ru.get('see_info') if user else ru.get('ask_fill_info')
+    keyboard4 = KeyboardButton(text=keyboard4_text)
     keyboard3 = KeyboardButton(text=ru.get('lang_change'))
     design = [
         [keyboard1],
