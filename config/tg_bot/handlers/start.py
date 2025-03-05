@@ -11,7 +11,7 @@ from dispatcher import dp
 from tg_bot.buttons.inline import *
 from tg_bot.buttons.reply import *
 from tg_bot.state.main import *
-from tg_bot.test import format_phone_number, passport_number_checker, is_valid_full_name, save_to_google_sheets
+from tg_bot.test import format_phone_number, passport_number_checker, is_valid_full_name, save_to_google_sheets,check_user_subscription
 
 
 # from aiogram.utils.markdown import hlink
@@ -19,10 +19,31 @@ from tg_bot.test import format_phone_number, passport_number_checker, is_valid_f
 @dp.message(lambda msg: msg.text == "/start", StateFilter(None))
 async def start(message: Message, state: FSMContext) -> None:
     user = TemporaryUser.objects.filter(tg_id=message.from_user.id).first()
-
+    # args = message.text.split()
+    # referrer_id = args[1] if len(args) > 1 else None  # Extract referral ID
+    #
+    # new_user, created = TemporaryUser.objects.get_or_create(
+    #     tg_id=message.from_user.id,
+    #     defaults={"full_name": message.from_user.full_name},
+    # )
+    #
+    # if created and referrer_id:
+    #     referrer = TemporaryUser.objects.filter(tg_id=referrer_id).first()
+    #     if referrer:
+    #         new_user.referred_by = referrer
+    #         new_user.save()
+    #
+    #
+    #         try:
+    #             await bot.send_message(
+    #                 chat_id=referrer.tg_id,
+    #                 text=f"🎉 {new_user.full_name} joined using your referral link! Keep inviting more friends!",
+    #             )
+    #         except Exception as e:
+    #             print(f"Error notifying referrer: {e}")
     if user:
-        await state.set_state(MenuState.menu)
-        await menu_handler(message, state)
+        await state.set_state(Subscribe.subscribe)
+        await sub(message, state)
     else:
         await message.answer(
             text="Tilni tanlang 🇺🇿\nВыберите язык 🇷🇺",
@@ -33,7 +54,7 @@ async def start(message: Message, state: FSMContext) -> None:
 
 @dp.message(StateFilter(LanguageState.language))
 async def select_language(message: Message, state: FSMContext) -> None:
-    chanels = ChannelsToSubscribe.objects.all()
+
     tg_id = message.from_user.id
 
     if message.text == uz_text:
@@ -54,26 +75,24 @@ async def select_language(message: Message, state: FSMContext) -> None:
     await menu_handler(message, state)
 
 
-#
-# @dp.message(StateFilter(Subscribe.subscribe))
-# async def sub(message: Message,state: FSMContext) -> None:
-#     user_id = message.from_user.id
-#     channels = ChannelsToSubscribe.objects.all()
-#     user = TemporaryUser.objects.filter(tg_id=message.from_user.id).first()
-#     print(is_user_subscribed(user_id, channels))
-#     if await is_user_subscribed(user_id, channels):
-#         await state.set_state(MenuState.menu)
-#         await menu_handler(message, state)
-#     else:
-#         await state.set_state(Subscribe.subscribe)
-#         if user.interface_language=='uz':
-#             await message.answer(text='Follow us!',reply_markup=ReplyKeyboardRemove())
-#             await message.answer(text=uz.get('ask_sub'), reply_markup=join_chanels())
-#             return
-#         else:
-#             await message.answer(text='Follow us!',reply_markup=ReplyKeyboardRemove())
-#             await message.answer(text=ru.get('ask_sub'), reply_markup=join_chanels())
-#             return
+
+@dp.message(StateFilter(Subscribe.subscribe))
+async def sub(message: Message, state: FSMContext) -> None:
+    user_id = message.from_user.id
+    channels = list(ChannelsToSubscribe.objects.values_list("link", flat=True))
+    user = TemporaryUser.objects.filter(tg_id=user_id).first()
+    subscription_results = await check_user_subscription(user_id, channels)
+
+    if all(subscription_results.values()):
+        await state.set_state(MenuState.menu)
+        await menu_handler(message, state)
+    else:
+        await state.set_state(Subscribe.subscribe)
+        lang_text = uz.get("ask_sub") if user.interface_language == "uz" else ru.get("ask_sub")
+        lang_txt=uz.get('ask_sub1') if user.interface_language == "uz" else ru.get("ask_sub1")
+        await message.answer(text=lang_txt, reply_markup=ReplyKeyboardRemove())
+        await message.answer(text=lang_text, reply_markup=join_channels())
+
 
 
 @dp.message(StateFilter(MenuState.menu))
@@ -677,7 +696,7 @@ async def confirm_handler(call: CallbackQuery, state: FSMContext) -> None:
     user = UniversityApplication.objects.create(**data)
     user.save()
 
-    save_to_google_sheets(**data)
+    # save_to_google_sheets(**data)
 
     await state.set_state(MenuState.menu)
 

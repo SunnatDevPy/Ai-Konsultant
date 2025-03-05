@@ -1,4 +1,4 @@
-
+from tg_bot.test import remove_at_prefix
 from bot.models import ChannelsToSubscribe
 from aiogram.types import InlineKeyboardButton, InlineKeyboardMarkup
 
@@ -13,7 +13,13 @@ def accept_btn_ru():
     cancel = InlineKeyboardButton(text = "🗑 Отмена данных", callback_data="cancelled")
     return InlineKeyboardMarkup(inline_keyboard=[[accept], [cancel]])
 
-def join_chanels():
-    channels=ChannelsToSubscribe.objects.all()
-    buttons = [InlineKeyboardButton(text=f"Join {channel}", url=f"https://t.me/{channel}") for channel in channels]
+def join_channels():
+    channels = ChannelsToSubscribe.objects.all()
+    buttons = [
+        InlineKeyboardButton(
+            text=channel.name,
+            url=f"https://t.me/{remove_at_prefix(channel.link)}"
+        )
+        for channel in channels
+    ]
     return InlineKeyboardMarkup(inline_keyboard=[buttons])

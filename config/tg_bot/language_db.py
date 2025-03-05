@@ -23,7 +23,8 @@ uz = {
     "ask_name_again":"Ism faqat harfdan tashkil topishi mumkin. \nQaytadan kiriting.",
     "number_ask_again":"Telefon raqamingizni to'g'ri kiriting!",
     "ask_number_again":"Kiritgan raqamingiz oldingisi bilan bir xil bo'la olmaydi!",
-    "ask_sub":"Barcha kanal va guruhlarga a'zo bo'ling va /start ni qaytadan bosing!"
+    "ask_sub":"Barcha kanal va guruhlarga a'zo bo'ling va /start ni qaytadan bosing!",
+    "ask_sub1":"Majburiy obuna uchun tekshiruv!"
 
 }
 
@@ -52,6 +53,7 @@ ru = {
     "ask_name_again":"Имя может состоять только из букв. \nПовторно введите.",
     "number_ask_again":"Введите свой номер телефона правильно!",
     "ask_number_again":"Введенный вами номер не может совпадать с предыдущим!",
-    "ask_sub":"Подписывайтесь на все каналы и группы и снова нажмите /start!"
+    "ask_sub":"Подписывайтесь на все каналы и группы и снова нажмите /start!",
+    "ask_sub1":"Обязательная проверка подписки!"
 
 }

@@ -100,6 +100,7 @@ class StudyDirections(models.Model):
     created_at=models.DateTimeField(auto_now_add=True)
 
 class ChannelsToSubscribe(models.Model):
+    name=models.CharField(max_length=100)
     link=models.CharField(max_length=100)
 
     def __str__(self):
