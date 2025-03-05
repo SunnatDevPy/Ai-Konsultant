@@ -11,6 +11,11 @@ class Subscribe(StatesGroup):
     subscribe = State()
 class Info(StatesGroup):
     info = State()
+class File(StatesGroup):
+    file = State()
+class Ai(StatesGroup):
+    ai = State()
+
 class Messeage(StatesGroup):
     age=State()
     study_level=State()

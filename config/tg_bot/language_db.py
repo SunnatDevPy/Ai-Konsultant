@@ -29,7 +29,10 @@ uz = {
     "see_info": "📄 Mening ma'lumotlarim.",
     "score": "💰 Mening ballarim",
     "didnt_sub":"❌ Siz hali ham kanalga a'zo bo‘lmadingiz!",
-    "ask_fill":"❌ Bu xizmatdan foydalanish uchun oldin malumotlaringizni to'ldiring!"
+    "ask_fill":"❌ Bu xizmatdan foydalanish uchun oldin malumotlaringizni to'ldiring!",
+    "file_button1":"🧾 Grant olish bo‘yicha maxsus qo‘llanma!",
+    "file_button2":"📑 Bepul DTM test to‘plami!",
+    "file_txt1":"1. 3 do‘st taklif qiling – “Grant olish bo‘yicha maxsus qo‘llanma” ga ega bo'ling. \n2. 10 do‘st taklif qiling – “Bepul DTM test to‘plami” dan bahramand bo'ling."
 
 }
 
@@ -64,5 +67,8 @@ ru = {
     "see_info": "📄 Моя информация.",
     "score": "💰 Мой счет.",
     "didnt_sub":"❌ Вы еще не являетесь участником канала!",
-"ask_fill":"❌ Сначала заполните свою информацию, чтобы воспользоваться этой услугой!"
+"ask_fill":"❌ Сначала заполните свою информацию, чтобы воспользоваться этой услугой!",
+"file_button1":"🧾 Специальное руководство по получению стипендии!",
+    "file_button2":"📑 Бесплатный тестовый комплект DTM!",
+    "file_txt1":"1. Пригласите 3 друзей – получите «Специальное руководство по грантам». \n2. Пригласите 10 друзей — получите «Бесплатный тестовый пакет DTM»."
 }

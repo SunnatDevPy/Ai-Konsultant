@@ -188,11 +188,12 @@ def education_type_buttons_uz():
     design = [[keyboard1, keyboard2], [keyboard3, keyboard4],[keyboard5]]
     return ReplyKeyboardMarkup(keyboard=design, resize_keyboard=True)
 def education_type_buttons_ru():
-    keyboard1 = KeyboardButton(text="🏞 Дневное время")
-    keyboard2 = KeyboardButton(text=".")
-    keyboard3 = KeyboardButton(text="⛺️ Внешне")
-    keyboard4 = KeyboardButton(text="🛣 Удаленный")
+    keyboard1 = KeyboardButton(text="🏞 Дневное обучение")
+    keyboard2 = KeyboardButton(text="🌃 Вечернее обучение")
+    keyboard3 = KeyboardButton(text="⛺️ Заочное обучение")
+    keyboard4 = KeyboardButton(text="🛣 Удаленное обучение")
     keyboard5 = KeyboardButton(text=nazad)
+
     design = [[keyboard1, keyboard2], [keyboard3, keyboard4], [keyboard5]]
     return ReplyKeyboardMarkup(keyboard=design, resize_keyboard=True)
 def application_type_buttons_uz():
@@ -204,8 +205,8 @@ def application_type_buttons_uz():
     return ReplyKeyboardMarkup(keyboard=design,resize_keyboard=True)
 def application_type_buttons_ru():
     keyboard1 = KeyboardButton(text="💲 Грант")
-    keyboard2 = KeyboardButton(text="🔖 Kонтракт")
-    keyboard3 = KeyboardButton(text="🧮 Я подчиняюсь обоим")
+    keyboard2 = KeyboardButton(text="🔖 Контракт")
+    keyboard3 = KeyboardButton(text="🧮 Подам заявку на оба")
     keyboard4=KeyboardButton(text=nazad)
     design = [[keyboard1, keyboard2], [keyboard3,keyboard4]]
     return ReplyKeyboardMarkup(keyboard=design, resize_keyboard=True)
@@ -250,7 +251,7 @@ def source_buttons_uz():
     keyboard2 = KeyboardButton(text="🛫 Telegram")
     keyboard3 = KeyboardButton(text="🔎 Google / Yandex")
     keyboard4 = KeyboardButton(text="👫 Do‘stim tavsiya qildi")
-    keyboard5 = KeyboardButton(text="✍️ Boshqa")
+    keyboard5 = KeyboardButton(text=boshqa)
     keyboard6 = KeyboardButton(text=ortga)
     design = [[keyboard1,keyboard2], [keyboard3, keyboard4], [keyboard5, keyboard6]]
     return ReplyKeyboardMarkup(keyboard=design, resize_keyboard=True)
@@ -259,7 +260,7 @@ def source_buttons_ru():
     keyboard2 = KeyboardButton(text="🛫 Телеграм")
     keyboard3 = KeyboardButton(text="🔎 Google/Яндекс")
     keyboard4 = KeyboardButton(text="👫 Мой друг рекомендовал это")
-    keyboard5 = KeyboardButton(text="✍️ Другой")
+    keyboard5 = KeyboardButton(text=drugoy)
     keyboard6 = KeyboardButton(text=nazad)
     design = [[keyboard1, keyboard2], [keyboard3, keyboard4], [keyboard5, keyboard6]]
     return ReplyKeyboardMarkup(keyboard=design, resize_keyboard=True)
@@ -273,7 +274,13 @@ def back_ru():
     design = [[keyboard1]]
     return ReplyKeyboardMarkup(keyboard=design , resize_keyboard=True)
 
-
-
-
-
+def file_btn_uz():
+    keyboard1=KeyboardButton(text=uz.get('file_button1'))
+    keyboard2=KeyboardButton(text=uz.get('file_button2'))
+    design=[[keyboard1,keyboard2]]
+    return ReplyKeyboardMarkup(keyboard=design, resize_keyboard=True)
+def file_btn_ru():
+    keyboard1=KeyboardButton(text=ru.get('file_button1'))
+    keyboard2=KeyboardButton(text=ru.get('file_button2'))
+    design=[[keyboard1,keyboard2]]
+    return ReplyKeyboardMarkup(keyboard=design, resize_keyboard=True)

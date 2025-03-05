@@ -115,8 +115,10 @@ class Referral(models.Model):
     referrer_id = models.IntegerField()
     referred_user_id = models.IntegerField()
 
+
 class AllUsersTgId(models.Model):
     tg_id=models.IntegerField()
+    referal_count=models.IntegerField(default=0)
 
     def __str__(self):
         return self.tg_id
