@@ -1,10 +1,11 @@
 import re
 
+from aiogram import F
 from aiogram.filters import StateFilter
 from aiogram.filters.command import Command
 from aiogram.fsm.context import FSMContext
 # from aiogram.filters import Command
-from aiogram.types import Message
+from aiogram.types import Message, ContentType
 from aiogram.types import ReplyKeyboardRemove, CallbackQuery
 
 from bot.models import TemporaryUser, Referral, AllUsersTgId
@@ -19,10 +20,11 @@ from tg_bot.utils import format_phone_number, passport_number_checker, is_valid_
 
 @dp.message(Command("start"), StateFilter(None))
 async def start(message: Message, state: FSMContext) -> None:
+    tg_id = message.from_user.id
     idlar = list(AllUsersTgId.objects.values_list('tg_id', flat=True))
-    if str(message.from_user.id) not in idlar:
-        AllUsersTgId.objects.create(tg_id=str(message.from_user.id))
-    user = TemporaryUser.objects.filter(tg_id=message.from_user.id).first()
+    if message.from_user.id not in idlar:
+        AllUsersTgId.objects.create(tg_id=message.from_user.id)
+    user1 = TemporaryUser.objects.filter(tg_id=tg_id).first()
     if ' ' in message.text:
         args = message.text.split(' ')[1]
         print(f"Args found: {args}")
@@ -43,15 +45,17 @@ async def start(message: Message, state: FSMContext) -> None:
                 user = AllUsersTgId.objects.get(tg_id=message.from_user.id)
                 user.referal_count += 1
                 user.save()
-                await bot.send_message(chat_id=inviter_id,
-                                       text=f"🥳 Tabriklayman sizning referalingiz orqali {message.from_user.full_name} ro'yxatdan o'tdi.")
-                print("Referral created successfully")
+                await bot.send_message(
+                    chat_id=inviter_id,
+                    text=f"🥳 Tabriklayman! Sizning referalingiz orqali <a href='tg://user?id={message.from_user.id}'>{message.from_user.full_name}</a> ro'yxatdan o'tdi.",
+                    parse_mode="HTML"
+                )
             else:
                 await state.update_data(referred_id=inviter_id, referred_user_id=message.from_user.id)
                 print("Referral already exists, updated state")
         except ValueError:
             print(f"Invalid inviter ID: {args}")
-    if user:
+    if user1:
         await state.set_state(Subscribe.subscribe)
         await sub(message, state)
     else:
@@ -145,7 +149,6 @@ async def menu_handler(message: Message, state: FSMContext) -> None:
 async def servis(message: Message, state: FSMContext) -> None:
     user_temp = TemporaryUser.objects.filter(tg_id=message.from_user.id).first()
     user = UniversityApplication.objects.filter(tg_id=message.from_user.id).first()
-    user_ang = AllUsersTgId.objects.filter(tg_id=message.from_user.id).first()
     if not user:
         if user_temp.interface_language == 'uz':
             await message.answer(text=uz.get('ask_fill'))
@@ -153,18 +156,16 @@ async def servis(message: Message, state: FSMContext) -> None:
             await message.answer(text=ru.get('ask_fill'))
 
     elif message.text in File_servis:
-        if user_ang.referal_count < 3:
-            if user_temp.interface_language == 'uz':
-                await message.answer(text=uz.get('file_txt1'), reply_markup=referral_btn(message.from_user.id))
-            else:
-                await message.answer(text=ru.get('file_txt1'), reply_markup=referral_btn(message.from_user.id))
+        if user_temp.interface_language == 'uz':
+            await message.answer(text=uz.get('file_txt1'), reply_markup=file_btn_uz())
         else:
-            await state.set_state(File.file)
-            await info(message, state)
-            return
+            await message.answer(text=ru.get('file_txt1'), reply_markup=file_btn_ru())
+        await state.set_state(File.file)
+        await info(message, state)
 
     else:
-        await message.answer(text='Ai')
+        await state.set_state(Ai.ai)
+        await ai(message, state)
 
 
 @dp.message(lambda message: message.text in [
@@ -655,12 +656,11 @@ async def source(message: Message, state: FSMContext) -> None:
     if message.text in [boshqa, drugoy]:
         await state.set_state(Messeage.customMessage)
         if user.interface_language == 'uz':
-            await message.answer(text="👨‍💻 Shaxsiy javobingiz.",reply_markup=ReplyKeyboardRemove())
+            await message.answer(text="👨‍💻 Shaxsiy javobingiz.", reply_markup=ReplyKeyboardRemove())
             return
         else:
-            await message.answer(text="👨‍💻 Ваш личный ответ.",reply_markup=ReplyKeyboardRemove())
+            await message.answer(text="👨‍💻 Ваш личный ответ.", reply_markup=ReplyKeyboardRemove())
             return
-
 
     data = await state.get_data()
     data['bot_source'] = message.text
@@ -825,13 +825,48 @@ async def info(message: Message, state: FSMContext) -> None:
 
 @dp.message(StateFilter(File.file))
 async def info(message: Message, state: FSMContext) -> None:
-    user_temp = TemporaryUser.objects.filter(user_id=message.from_user.id).first()
-    if user_temp.interface_language == 'uz':
-        await message.answer(text=uz.get('file_txt1'), reply_markup=file_btn_uz())
-    else:
-        await message.answer(text=ru.get('file_txt1'), reply_markup=file_btn_ru())
+    user = TemporaryUser.objects.filter(tg_id=message.from_user.id).first()
+    user_check = AllUsersTgId.objects.filter(tg_id=message.from_user.id).first()
+    if message.text in [menuga_uz, menuga_ru]:
+        await state.set_state(MenuState.menu)
+        await menu_handler(message, state)
+    if message.text in (uz.get('file_button1'), ru.get('file_button1')):
+        if user_check.referal_count > 3:
+            await message.answer_document(document="BQACAgIAAxkBAAIPD2fJCD6YBCeiQ-MKsAyLCmYmqYeRAAIibAAC6NhJSlqPmpZkXMBiNgQ", caption=uz.get('file_button1'))
+        else:
+            if user.interface_language=='uz':
+                await message.answer(text=uz.get('invite1'))
+            else:
+                await message.answer(text=ru.get('invite1'))
+    if message.text in (uz.get('file_button2'), ru.get('file_button2')):
+        if user_check.referal_count < 3:
+            await message.answer(text='wefwefefwwfw')
 
 
 @dp.message(StateFilter(Ai.ai))
 async def ai(message: Message, state: FSMContext) -> None:
     pass
+
+#
+# @dp.message(F.content_type == ContentType.PHOTO)
+# async def get_photo_file_id(message: Message):
+#     file_id = message.photo[-1].file_id
+#     await message.answer(f"🖼 Your photo file ID:\n{file_id}")
+#
+#
+# @dp.message(F.content_type == ContentType.DOCUMENT)
+# async def get_document_file_id(message: Message):
+#     file_id = message.document.file_id
+#     await message.answer(f"📂 Your file ID:\n{file_id}")
+#
+#
+# @dp.message(F.content_type == ContentType.VOICE)
+# async def get_voice_file_id(message: Message):
+#     file_id = message.voice.file_id
+#     await message.answer(f"🎙 Your voice file ID:\n{file_id}")
+#
+#
+# @dp.message(F.content_type == ContentType.VIDEO)
+# async def get_video_file_id(message: Message):
+#     file_id = message.video.file_id
+#     await message.answer(f"🎥 Your video file ID:\n{file_id}")

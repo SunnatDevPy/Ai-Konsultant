@@ -32,7 +32,8 @@ uz = {
     "ask_fill":"❌ Bu xizmatdan foydalanish uchun oldin malumotlaringizni to'ldiring!",
     "file_button1":"🧾 Grant olish bo‘yicha maxsus qo‘llanma!",
     "file_button2":"📑 Bepul DTM test to‘plami!",
-    "file_txt1":"1. 3 do‘st taklif qiling – “Grant olish bo‘yicha maxsus qo‘llanma” ga ega bo'ling. \n2. 10 do‘st taklif qiling – “Bepul DTM test to‘plami” dan bahramand bo'ling."
+    "file_txt1":"🙋 Foyadli bo'gan malumotlarni yuklab olish uchun botga do'stingizni taklif qilishingiz kerak. \n\n1️⃣ 3 ta do‘stingizni taklif qiling va “📓 Grant olish bo‘yicha maxsus qo‘llanma” ga ega bo'ling. \n\n2️⃣ 10 ta do‘st taklif qiling va “📑 Bepul DTM test to‘plamlaridan” dan bahramand bo'ling.",
+    "invite1":"❌ Siz qo'llanmani yuklab olish uchun yana do'slaringizni taklif qilishingiz kerak."
 
 }
 
@@ -70,5 +71,6 @@ ru = {
 "ask_fill":"❌ Сначала заполните свою информацию, чтобы воспользоваться этой услугой!",
 "file_button1":"🧾 Специальное руководство по получению стипендии!",
     "file_button2":"📑 Бесплатный тестовый комплект DTM!",
-    "file_txt1":"1. Пригласите 3 друзей – получите «Специальное руководство по грантам». \n2. Пригласите 10 друзей — получите «Бесплатный тестовый пакет DTM»."
+    "file_txt1":"🙋 Чтобы скачать полезную информацию, вам нужно пригласить друга в бот. \n\n1️⃣ Пригласите 3 друзей и получите “📓 Специальное руководство по получению гранта”. \n\n2️⃣ Пригласите 10 друзей и воспользуйтесь “📑 Бесплатными сборниками тестов DTM”.",
+    "invite1":"❌ Вам нужно пригласить еще друзей, чтобы скачать руководство."
 }

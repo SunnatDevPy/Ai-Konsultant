@@ -31,9 +31,17 @@ def join_channels():
 
     return InlineKeyboardMarkup(inline_keyboard=buttons)
 
+
 def referral_btn(user_id):
+    bot_link = f"https://t.me/ricoin_bot?start={user_id}"
+    text = "🚀 Bizga qo'shiling va kelajagingiz sari yana bir ulkan qadamni tashlang!"
+
     ikb = InlineKeyboardBuilder()
-    ikb.row(InlineKeyboardButton(text='Referal',
-                                 url=f"https://t.me/share/url?url=https://t.me/ricoin_bot?start={user_id}"))
+    ikb.row(InlineKeyboardButton(
+        text='Invite Friends',
+        url=f"https://t.me/share/url?url={bot_link}&text={text}"
+    ))
 
     return ikb.as_markup()
+
+

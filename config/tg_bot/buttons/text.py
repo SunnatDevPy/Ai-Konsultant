@@ -3,6 +3,8 @@ from bot.models import StudyDirections_uz,StudyDirections_ru
 boshqa = "✍️ Boshqa"
 drugoy ="✍️ Другой"
 ortga = "🔙 Ortga"
+menuga_uz='🔙 Asosiy menu qaytish'
+menuga_ru='🔙 Главное меню'
 nazad = "🔙 Назад"
 uz_text = "🇺🇿 O'zbek"
 ru_text = "🇷🇺 Русский"

@@ -277,10 +277,12 @@ def back_ru():
 def file_btn_uz():
     keyboard1=KeyboardButton(text=uz.get('file_button1'))
     keyboard2=KeyboardButton(text=uz.get('file_button2'))
-    design=[[keyboard1,keyboard2]]
+    keyboard3=KeyboardButton(text=menuga_uz)
+    design=[[keyboard1,keyboard2],[keyboard3]]
     return ReplyKeyboardMarkup(keyboard=design, resize_keyboard=True)
 def file_btn_ru():
     keyboard1=KeyboardButton(text=ru.get('file_button1'))
     keyboard2=KeyboardButton(text=ru.get('file_button2'))
-    design=[[keyboard1,keyboard2]]
+    keyboard3=KeyboardButton(text=menuga_ru)
+    design=[[keyboard1,keyboard2],[keyboard3]]
     return ReplyKeyboardMarkup(keyboard=design, resize_keyboard=True)
