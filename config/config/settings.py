@@ -83,24 +83,27 @@ WSGI_APPLICATION = 'config.wsgi.application'
 # Database
 # https://docs.djangoproject.com/en/5.1/ref/settings/#databases
 
-DATABASES = {
-    'default': {
-        'ENGINE': 'django.db.backends.sqlite3',
-        'NAME': BASE_DIR / 'db.sqlite3',
-    }
-}
-#
 # DATABASES = {
-#     "default": {
-#         "ENGINE": "django.db.backends.postgresql",
-#         "NAME": config("POSTGRES_DB"),
-#         "USER": config("POSTGRES_USER"),
-#         "PASSWORD": config("POSTGRES_PASSWORD"),
-#         "HOST": config("POSTGRES_HOST", default="localhost"),
-#         # "HOST": 'pg',
-#         "PORT": config("POSTGRES_PORT", default=5434, cast=int),
+#     'default': {
+#         'ENGINE': 'django.db.backends.sqlite3',
+#         'NAME': BASE_DIR / 'db.sqlite3',
 #     }
 # }
+
+DATABASES = {
+    "default": {
+        "ENGINE": "django.db.backends.postgresql",
+        "NAME": config("POSTGRES_DB"),
+        "USER": config("POSTGRES_USER"),
+        "PASSWORD": config("POSTGRES_PASSWORD"),
+        "HOST": config("POSTGRES_HOST", default="localhost"),
+        # "HOST": 'pg',
+        "PORT": config("POSTGRES_PORT", default=5434, cast=int),
+'OPTIONS': {
+            'options': '-c search_path=bot_database'
+        }
+    }
+}
 
 
 # Password validation
@@ -138,14 +141,11 @@ USE_TZ = True
 PAGINATION_PAGE_SIZE = int(os.getenv("PAGINATION_PAGE_SIZE", "10"))
 
 
-STATIC_URL = "static/"
-MEDIA_URL = "media/"
+STATIC_URL = "/static/"
+STATICFILES_DIRS = [BASE_DIR / "static"]  # Keep this for development
 
-# Static files (CSS, JavaScript, Images)
-# https://docs.djangoproject.com/en/5.1/howto/static-files/
-
-
-STATIC_ROOT = BASE_DIR / "static"
+# Media files (User uploads)
+MEDIA_URL = "/media/"
 MEDIA_ROOT = BASE_DIR / "media"
 
 # Default primary key field type

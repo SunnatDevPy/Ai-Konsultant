@@ -1,18 +1,22 @@
+import os
+import django
+from aiogram.types import FSInputFile
+os.environ.setdefault('DJANGO_SETTINGS_MODULE', 'config.settings')
+django.setup()
 import re
-
+from aiogram import F
 from aiogram.filters import StateFilter
 from aiogram.filters.command import Command
 from aiogram.fsm.context import FSMContext
-# from aiogram.filters import Command
-from aiogram.types import Message
-from aiogram.types import ReplyKeyboardRemove, CallbackQuery
+from aiogram.types import Message, ReplyKeyboardRemove, CallbackQuery, InputFile
 
-from bot.models import TemporaryUser, Referral, AllUsersTgId
+from bot.models import TemporaryUser, Referral, AllUsersTgId,Files_to_download
 from dispatcher import dp
 from tg_bot.buttons.inline import *
 from tg_bot.buttons.reply import *
 from tg_bot.state.main import *
-from tg_bot.utils import format_phone_number, passport_number_checker, is_valid_full_name, check_user_subscription, bot,ask_AI
+from tg_bot.utils import format_phone_number, passport_number_checker, is_valid_full_name, check_user_subscription, bot, \
+    ask_AI
 
 
 # from aiogram.utils.markdown import hlink
@@ -41,7 +45,7 @@ async def start(message: Message, state: FSMContext) -> None:
 
             if referred is None and message.from_user.id not in idlar:
                 Referral.objects.create(referrer_id=inviter_id, referred_user_id=message.from_user.id)
-                user = AllUsersTgId.objects.get(tg_id=message.from_user.id)
+                user = AllUsersTgId.objects.get(tg_id=inviter_id)
                 user.referal_count += 1
                 user.save()
                 await bot.send_message(
@@ -95,12 +99,13 @@ async def check_subscription(callback: CallbackQuery, state: FSMContext):
     subscription_results = await check_user_subscription(user_id, channels)
 
     if all(subscription_results.values()):
-        lang = (user_temp.interface_language or "uz")
+        print('hiaefew')
+        lang = user_temp.interface_language
         text = uz.get("join_accep") if lang == "uz" else ru.get("join_accep")
-        await callback.answer(text=text)
-        await state.set_state(MenuState.menu)
+        btn = servis_btn_uz(callback.from_user.id) if lang == "uz" else servis_btn_ru(callback.from_user.id)
+        await callback.message.answer(text=text, reply_markup=btn)
         await callback.message.delete()
-        await menu_handler(callback.message, state)
+        await state.clear()
     else:
         lang = (user_temp.interface_language or "uz")
         text = uz.get("didnt_sub") if lang == "uz" else ru.get("didnt_sub")
@@ -479,14 +484,7 @@ async def direction(message: Message, state: FSMContext) -> None:
         else:
             await message.answer(text=ru.get('ask_region'), reply_markup=region_buttons_ru())
             return
-    if message.text not in study_directions1 and message.text not in study_directions2:
-        await state.set_state(Messeage.direction)
-        if user.interface_language == 'uz':
-            await message.answer(text=uz.get('button'))
-            return
-        else:
-            await message.answer(text=ru.get('button'))
-            return
+
     data = await state.get_data()
     data['desired_major'] = message.text
     await state.set_data(data)
@@ -756,14 +754,14 @@ async def confirm_handler(call: CallbackQuery, state: FSMContext) -> None:
     # save_to_google_sheets(**data)
 
     await state.set_state(MenuState.menu)
-
+    await call.message.delete()
     if user_temp.interface_language == 'uz':
-        await call.message.edit_text(text="✅ Ma'lumotlaringiz muvaffaqiyatli saqlandi!", reply_markup=None)
+        await call.message.answer(text="✅ Ma'lumotlaringiz muvaffaqiyatli saqlandi!", reply_markup=servis_btn_uz(call.from_user.id))
     else:
-        await call.message.edit_text(text="✅ Ваши данные успешно сохранены!", reply_markup=None)
+        await call.message.answer(text="✅ Ваши данные успешно сохранены!", reply_markup=servis_btn_ru(call.from_user.id))
 
     await call.answer()
-    await menu_handler(call.message, state)
+    await state.clear()
 
 
 @dp.callback_query(lambda call: call.data == 'cancelled')
@@ -772,12 +770,12 @@ async def cancel_handler(call: CallbackQuery, state: FSMContext) -> None:
     await state.set_state(MenuState.menu)
 
     if user.interface_language == "uz":
-        await call.message.edit_text(text="❌ Ma'lumotlaringiz bekor qilindi!", reply_markup=None)
+        await call.message.edit_text(text="❌ Ma'lumotlaringiz bekor qilindi!", reply_markup=servis_btn_uz(call.from_user.id))
     else:
-        await call.message.edit_text(text="❌ Ваши данные были удалены!", reply_markup=None)
+        await call.message.edit_text(text="❌ Ваши данные были удалены!", reply_markup=servis_btn_ru(call.from_user.id))
 
     await call.answer()
-    await menu_handler(call.message, state)
+    await state.clear()
 
 
 @dp.message(lambda message: message.text in (uz.get('see_info'), ru.get('see_info')))
@@ -856,15 +854,9 @@ async def info(message: Message, state: FSMContext) -> None:
                 await message.answer(text=ru.get('invite1'), reply_markup=referral_btn(message.from_user.id))
     if message.text in (uz.get('file_button2'), ru.get('file_button2')):
         if user_check.referal_count > 10:
-            await message.answer_document(
-                document="BQACAgIAAxkBAAIPD2fJCD6YBCeiQ-MKsAyLCmYmqYeRAAIibAAC6NhJSlqPmpZkXMBiNgQ",
-                caption=uz.get('file_button1'))
-            if user.interface_language == 'uz':
-                await message.answer(text=uz.get('ai_txt1'), reply_markup=ai_btn_uz())
-            else:
-                await message.answer(text=ru.get('ai_txt1'), reply_markup=ai_btn_ru())
-            await state.set_state(Ai.tasdiq)
-            return
+            # page = int(callback_query.data.split("_")[1])
+            message_text, keyboard = generate_pdf_list_message()
+            await message.answer(message_text, reply_markup=keyboard)
         else:
             if user.interface_language == 'uz':
                 await message.answer(text=uz.get('invite1'), reply_markup=referral_btn(message.from_user.id))
@@ -881,6 +873,7 @@ async def ai(message: Message, state: FSMContext) -> None:
 
     await state.set_state(Ai.response)
     await handle_asnwer(message, state)
+
 
 @dp.message(StateFilter(Ai.tasdiq))
 async def tasdiq(message: Message, state: FSMContext) -> None:
@@ -902,7 +895,9 @@ async def tasdiq(message: Message, state: FSMContext) -> None:
         else:
             await message.answer(text=ru.get('button'))
             return
-@dp.message(StateFilter( Ai.ask))
+
+
+@dp.message(StateFilter(Ai.ask))
 async def handle_question(message: Message, state: FSMContext) -> None:
     user = TemporaryUser.objects.filter(tg_id=message.from_user.id).first()
 
@@ -912,10 +907,11 @@ async def handle_question(message: Message, state: FSMContext) -> None:
         return
     elif message.text in (uz.get('new_ques'), ru.get('new_ques')):
         if user.interface_language == 'uz':
-            await message.answer(text=uz.get('ai_ask'),reply_markup=menu_back_uz())
+            await message.answer(text=uz.get('ai_ask'), reply_markup=menu_back_uz())
         else:
-            await message.answer(text=ru.get('ai_ask'),reply_markup=menu_back_ru())
+            await message.answer(text=ru.get('ai_ask'), reply_markup=menu_back_ru())
         await state.set_state(Ai.response)
+
 
 @dp.message(StateFilter(Ai.response))
 async def handle_asnwer(message: Message, state: FSMContext) -> None:
@@ -933,11 +929,6 @@ async def handle_asnwer(message: Message, state: FSMContext) -> None:
     else:
         await message.answer(response, reply_markup=ask_new_ru())
     await state.set_state(Ai.ask)
-
-
-
-
-
 
 
 # @dp.message(F.content_type == ContentType.PHOTO)
@@ -962,3 +953,23 @@ async def handle_asnwer(message: Message, state: FSMContext) -> None:
 # async def get_video_file_id(message: Message):
 #     file_id = message.video.file_id
 #     await message.answer(f"🎥 Your video file ID:\n{file_id}")
+
+@dp.callback_query(F.data.startswith("pdf_"))
+async def handle_pdf_selection(call: CallbackQuery, state: FSMContext):
+    pdf_id = int(call.data.split("_")[1])
+    file_obj = Files_to_download.objects.filter(id=pdf_id).first()
+
+    if file_obj:
+        file_path = file_obj.file.path
+
+        document = FSInputFile(file_path)
+        await call.message.answer_document(document=document, caption=f"📄 {file_obj.caption}")
+    else:
+        await call.answer("❌ File not found!", show_alert=True)
+
+@dp.callback_query(F.data.startswith("page_"))
+async def handle_pagination(call: CallbackQuery, state: FSMContext):
+    page = int(call.data.split("_")[1])
+    message_text, keyboard = generate_pdf_list_message(page=page)
+
+    await call.message.edit_text(text=message_text, reply_markup=keyboard)
