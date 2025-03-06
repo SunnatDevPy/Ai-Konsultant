@@ -15,6 +15,9 @@ class File(StatesGroup):
     file = State()
 class Ai(StatesGroup):
     ai = State()
+    response=State()
+    ask=State()
+    tasdiq=State()
 
 class Messeage(StatesGroup):
     age=State()

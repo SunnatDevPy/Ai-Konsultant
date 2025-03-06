@@ -32,8 +32,15 @@ uz = {
     "ask_fill":"❌ Bu xizmatdan foydalanish uchun oldin malumotlaringizni to'ldiring!",
     "file_button1":"🧾 Grant olish bo‘yicha maxsus qo‘llanma!",
     "file_button2":"📑 Bepul DTM test to‘plami!",
-    "file_txt1":"🙋 Foyadli bo'gan malumotlarni yuklab olish uchun botga do'stingizni taklif qilishingiz kerak. \n\n1️⃣ 3 ta do‘stingizni taklif qiling va “📓 Grant olish bo‘yicha maxsus qo‘llanma” ga ega bo'ling. \n\n2️⃣ 10 ta do‘st taklif qiling va “📑 Bepul DTM test to‘plamlaridan” dan bahramand bo'ling.",
-    "invite1":"❌ Siz qo'llanmani yuklab olish uchun yana do'slaringizni taklif qilishingiz kerak."
+    "file_txt1":"🙋 Foyadli bo'lgan malumotlarni yuklab olish uchun botga do'stingizni taklif qilishingiz kerak. \n\n1️⃣ 3 ta do‘stingizni taklif qiling va “📓 Grant olish bo‘yicha maxsus qo‘llanma” ga ega bo'ling. \n\n2️⃣ 10 ta do‘st taklif qiling va “📑 Bepul DTM test to‘plamlaridan” dan bahramand bo'ling.",
+    "invite1":"❌ Siz qo'llanmani yuklab olish uchun yana do'slaringizni taklif qilishingiz kerak.",
+    "join_accep":"A'zolik tasdiqlandi.",
+    "button":"🎛 Tugmalardan foydalaning.",
+    "ai_txt1":"📥 Siz faylingizni muvaffaqiyatli yuklab oldingiz! \n\n🤖 Endi AI Konsultantdan ham foydalanishni xohlaysizmi?",
+    "ai_txt2":"📝 Savolingizni bering!",
+"ai_ask1":"👨‍💻 AI konsultant bilan suhbatlashish",
+    "ai_ask":"👨‍💻 Savolingizni bering.",
+    "new_ques":"🔎 Yangi savol berish"
 
 }
 
@@ -72,5 +79,12 @@ ru = {
 "file_button1":"🧾 Специальное руководство по получению стипендии!",
     "file_button2":"📑 Бесплатный тестовый комплект DTM!",
     "file_txt1":"🙋 Чтобы скачать полезную информацию, вам нужно пригласить друга в бот. \n\n1️⃣ Пригласите 3 друзей и получите “📓 Специальное руководство по получению гранта”. \n\n2️⃣ Пригласите 10 друзей и воспользуйтесь “📑 Бесплатными сборниками тестов DTM”.",
-    "invite1":"❌ Вам нужно пригласить еще друзей, чтобы скачать руководство."
+    "invite1":"❌ Вам нужно пригласить еще друзей, чтобы скачать руководство.",
+    "join_accep":"Членство подтверждено.",
+    "button":"🎛 Используйте кнопки.",
+    "ai_txt1":"📥 Вы успешно скачали файл! \n\n🤖 Хотите теперь воспользоваться AI Консультантом?",
+    "ai_txt2":"📝 Задайте свой вопрос!",
+    "ai_ask":"👨‍💻 Задайте вопрос.",
+    "ai_ask1":"👨‍💻 Поболтать с AI Консультантом.",
+    "new_ques":"🔎 Задать новый вопрос"
 }

@@ -1,11 +1,10 @@
 import re
 
-from aiogram import F
 from aiogram.filters import StateFilter
 from aiogram.filters.command import Command
 from aiogram.fsm.context import FSMContext
 # from aiogram.filters import Command
-from aiogram.types import Message, ContentType
+from aiogram.types import Message
 from aiogram.types import ReplyKeyboardRemove, CallbackQuery
 
 from bot.models import TemporaryUser, Referral, AllUsersTgId
@@ -13,7 +12,7 @@ from dispatcher import dp
 from tg_bot.buttons.inline import *
 from tg_bot.buttons.reply import *
 from tg_bot.state.main import *
-from tg_bot.utils import format_phone_number, passport_number_checker, is_valid_full_name, check_user_subscription, bot
+from tg_bot.utils import format_phone_number, passport_number_checker, is_valid_full_name, check_user_subscription, bot,ask_AI
 
 
 # from aiogram.utils.markdown import hlink
@@ -81,7 +80,7 @@ async def select_language(message: Message, state: FSMContext) -> None:
             tg_id=tg_id, defaults={"interface_language": "ru"}
         )
     else:
-        await message.answer(text="Tugmalardan foydalaning. \nИспользуйте кнопки.")
+        await message.answer(text=uz.get('button'))
         return
 
     await state.set_state(MenuState.menu)
@@ -96,6 +95,9 @@ async def check_subscription(callback: CallbackQuery, state: FSMContext):
     subscription_results = await check_user_subscription(user_id, channels)
 
     if all(subscription_results.values()):
+        lang = (user_temp.interface_language or "uz")
+        text = uz.get("join_accep") if lang == "uz" else ru.get("join_accep")
+        await callback.answer(text=text)
         await state.set_state(MenuState.menu)
         await callback.message.delete()
         await menu_handler(callback.message, state)
@@ -126,23 +128,26 @@ async def sub(message: Message, state: FSMContext) -> None:
 @dp.message(StateFilter(MenuState.menu))
 async def menu_handler(message: Message, state: FSMContext) -> None:
     user = TemporaryUser.objects.filter(tg_id=message.from_user.id).first()
+    try:
 
-    if not user:
-        await start(message, state)
+        if not user:
+            await menu_handler(message, state)
 
-    if user.interface_language == "uz":
-        await message.answer(
-            text=uz.get('servis'),
-            reply_markup=servis_btn_uz(message.from_user.id)
-        )
+        if user.interface_language == "uz":
+            await message.answer(
+                text=uz.get('servis'),
+                reply_markup=servis_btn_uz(message.from_user.id)
+            )
 
-    else:
-        await message.answer(
-            text=ru.get('servis'),
-            reply_markup=servis_btn_ru(message.from_user.id)
-        )
+        else:
+            await message.answer(
+                text=ru.get('servis'),
+                reply_markup=servis_btn_ru(message.from_user.id)
+            )
 
-    await state.clear()
+        await state.clear()
+    except Exception as ex:
+        await state.set_state(MenuState.menu)
 
 
 @dp.message(lambda message: message.text in commands)
@@ -164,8 +169,11 @@ async def servis(message: Message, state: FSMContext) -> None:
         await info(message, state)
 
     else:
+        if user_temp.interface_language == 'uz':
+            await message.answer(text=uz.get('ai_txt2'), reply_markup=menu_back_uz())
+        else:
+            await message.answer(text=ru.get('ai_txt2'), reply_markup=menu_back_ru())
         await state.set_state(Ai.ai)
-        await ai(message, state)
 
 
 @dp.message(lambda message: message.text in [
@@ -359,10 +367,10 @@ async def age(message: Message, state: FSMContext) -> None:
     if not message.text in ['17-19', '20-22', '23-25', '25+']:
         await state.set_state(Messeage.age)
         if user.interface_language == 'uz':
-            await message.answer(text="Tugmalardan foydalaning.")
+            await message.answer(text=uz.get('button'))
             return
         else:
-            await message.answer(text="Используйте кнопки.")
+            await message.answer(text=ru.get('button'))
             return
     data = await state.get_data()
     data['age'] = message.text
@@ -387,10 +395,10 @@ async def study_level(message: Message, state: FSMContext) -> None:
             return
     if not message.text in univer:
         if user.interface_language == 'uz':
-            await message.answer(text="Tugmalardan foydalaning.")
+            await message.answer(text=uz.get('button'))
             return
         else:
-            await message.answer(text="Используйте кнопки.")
+            await message.answer(text=ru.get('button'))
             return
     data = await state.get_data()
     data['education_level'] = message.text
@@ -416,10 +424,10 @@ async def current_study(message: Message, state: FSMContext) -> None:
     if not message.text in current:
         await state.set_state(Messeage.current_study)
         if user.interface_language == 'uz':
-            await message.answer(text="Tugmalardan foydalaning.")
+            await message.answer(text=uz.get('button'))
             return
         else:
-            await message.answer(text="Используйте кнопки.")
+            await message.answer(text=ru.get('button'))
             return
     data = await state.get_data()
     data['current_education'] = message.text
@@ -445,10 +453,10 @@ async def region(message: Message, state: FSMContext) -> None:
     if message.text not in regions_valid:
         await state.set_state(Messeage.region)
         if user.interface_language == 'uz':
-            await message.answer(text="Tugmalardan foydalaning.")
+            await message.answer(text=uz.get('button'))
             return
         else:
-            await message.answer(text="Используйте кнопки.")
+            await message.answer(text=ru.get('button'))
             return
     data = await state.get_data()
     data['region'] = message.text
@@ -474,10 +482,10 @@ async def direction(message: Message, state: FSMContext) -> None:
     if message.text not in study_directions1 and message.text not in study_directions2:
         await state.set_state(Messeage.direction)
         if user.interface_language == 'uz':
-            await message.answer(text="Tugmalardan foydalaning.")
+            await message.answer(text=uz.get('button'))
             return
         else:
-            await message.answer(text="Используйте кнопки.")
+            await message.answer(text=ru.get('button'))
             return
     data = await state.get_data()
     data['desired_major'] = message.text
@@ -503,10 +511,10 @@ async def education_language(message: Message, state: FSMContext) -> None:
     if message.text not in button_texts:
         await state.set_state(Messeage.language)
         if user.interface_language == 'uz':
-            await message.answer(text="Tugmalardan foydalaning.")
+            await message.answer(text=uz.get('button'))
             return
         else:
-            await message.answer(text="Используйте кнопки.")
+            await message.answer(text=ru.get('button'))
             return
     data = await state.get_data()
     data['education_language'] = message.text
@@ -532,10 +540,10 @@ async def education_type(message: Message, state: FSMContext) -> None:
     if message.text not in education_buttons:
         await state.set_state(Messeage.education_type)
         if user.interface_language == 'uz':
-            await message.answer(text="Tugmalardan foydalaning.")
+            await message.answer(text=uz.get('button'))
             return
         else:
-            await message.answer(text="Используйте кнопки.")
+            await message.answer(text=ru.get('button'))
             return
     data = await state.get_data()
     data['study_mode'] = message.text
@@ -561,10 +569,10 @@ async def application_type(message: Message, state: FSMContext) -> None:
     if message.text not in application_btn:
         await state.set_state(Messeage.application_type)
         if user.interface_language == 'uz':
-            await message.answer(text="Tugmalardan foydalaning.")
+            await message.answer(text=uz.get('button'))
             return
         else:
-            await message.answer(text="Используйте кнопки.")
+            await message.answer(text=ru.get('button'))
             return
     data = await state.get_data()
     data['financial_aid'] = message.text
@@ -590,10 +598,10 @@ async def university_priority(message: Message, state: FSMContext) -> None:
     if message.text not in all_btn:
         await state.set_state(Messeage.university_priority)
         if user.interface_language == 'uz':
-            await message.answer(text="Tugmalardan foydalaning.")
+            await message.answer(text=uz.get('button'))
             return
         else:
-            await message.answer(text="Используйте кнопки.")
+            await message.answer(text=ru.get('button'))
             return
     data = await state.get_data()
     data['important_factor'] = message.text
@@ -619,10 +627,10 @@ async def assistance(message: Message, state: FSMContext) -> None:
     if message.text not in all_btns:
         await state.set_state(Messeage.assistance)
         if user.interface_language == 'uz':
-            await message.answer(text="Tugmalardan foydalaning.")
+            await message.answer(text=uz.get('button'))
             return
         else:
-            await message.answer(text="Используйте кнопки.")
+            await message.answer(text=ru.get('button'))
             return
     data = await state.get_data()
     data['help_source'] = message.text
@@ -648,10 +656,10 @@ async def source(message: Message, state: FSMContext) -> None:
     if message.text not in all_buttons:
         await state.set_state(Messeage.source)
         if user.interface_language == 'uz':
-            await message.answer(text="Tugmalardan foydalaning.")
+            await message.answer(text=uz.get('button'))
             return
         else:
-            await message.answer(text="Используйте кнопки.")
+            await message.answer(text=ru.get('button'))
             return
     if message.text in [boshqa, drugoy]:
         await state.set_state(Messeage.customMessage)
@@ -830,24 +838,108 @@ async def info(message: Message, state: FSMContext) -> None:
     if message.text in [menuga_uz, menuga_ru]:
         await state.set_state(MenuState.menu)
         await menu_handler(message, state)
-    if message.text in (uz.get('file_button1'), ru.get('file_button1')):
+    elif message.text in (uz.get('file_button1'), ru.get('file_button1')):
         if user_check.referal_count > 3:
-            await message.answer_document(document="BQACAgIAAxkBAAIPD2fJCD6YBCeiQ-MKsAyLCmYmqYeRAAIibAAC6NhJSlqPmpZkXMBiNgQ", caption=uz.get('file_button1'))
-        else:
-            if user.interface_language=='uz':
-                await message.answer(text=uz.get('invite1'))
+            await message.answer_document(
+                document="BQACAgIAAxkBAAIPD2fJCD6YBCeiQ-MKsAyLCmYmqYeRAAIibAAC6NhJSlqPmpZkXMBiNgQ",
+                caption=uz.get('file_button1'))
+            if user.interface_language == 'uz':
+                await message.answer(text=uz.get('ai_txt1'), reply_markup=ai_btn_uz())
             else:
-                await message.answer(text=ru.get('invite1'))
+                await message.answer(text=ru.get('ai_txt1'), reply_markup=ai_btn_ru())
+            await state.set_state(Ai.tasdiq)
+            return
+        else:
+            if user.interface_language == 'uz':
+                await message.answer(text=uz.get('invite1'), reply_markup=referral_btn(message.from_user.id))
+            else:
+                await message.answer(text=ru.get('invite1'), reply_markup=referral_btn(message.from_user.id))
     if message.text in (uz.get('file_button2'), ru.get('file_button2')):
-        if user_check.referal_count < 3:
-            await message.answer(text='wefwefefwwfw')
+        if user_check.referal_count > 10:
+            await message.answer_document(
+                document="BQACAgIAAxkBAAIPD2fJCD6YBCeiQ-MKsAyLCmYmqYeRAAIibAAC6NhJSlqPmpZkXMBiNgQ",
+                caption=uz.get('file_button1'))
+            if user.interface_language == 'uz':
+                await message.answer(text=uz.get('ai_txt1'), reply_markup=ai_btn_uz())
+            else:
+                await message.answer(text=ru.get('ai_txt1'), reply_markup=ai_btn_ru())
+            await state.set_state(Ai.tasdiq)
+            return
+        else:
+            if user.interface_language == 'uz':
+                await message.answer(text=uz.get('invite1'), reply_markup=referral_btn(message.from_user.id))
+            else:
+                await message.answer(text=ru.get('invite1'), reply_markup=referral_btn(message.from_user.id))
 
 
 @dp.message(StateFilter(Ai.ai))
 async def ai(message: Message, state: FSMContext) -> None:
-    pass
+    if message.text in [menuga_uz, menuga_ru]:
+        await state.set_state(MenuState.menu)
+        await menu_handler(message, state)
+        return
 
-#
+    await state.set_state(Ai.response)
+    await handle_asnwer(message, state)
+
+@dp.message(StateFilter(Ai.tasdiq))
+async def tasdiq(message: Message, state: FSMContext) -> None:
+    user = TemporaryUser.objects.filter(tg_id=message.from_user.id).first()
+    if message.text in [menuga_uz, menuga_ru]:
+        await state.set_state(MenuState.menu)
+        await menu_handler(message, state)
+        return
+    elif message.text in (uz.get('ai_ask1'), ru.get('ai_ask1')):
+        if user.interface_language == 'uz':
+            await message.answer(text=uz.get('ai_txt2'), reply_markup=menu_back_uz())
+        else:
+            await message.answer(text=ru.get('ai_txt2'), reply_markup=menu_back_ru())
+        await state.set_state(Ai.ai)
+    else:
+        if user.interface_language == 'uz':
+            await message.answer(text=uz.get('button'))
+            return
+        else:
+            await message.answer(text=ru.get('button'))
+            return
+@dp.message(StateFilter( Ai.ask))
+async def handle_question(message: Message, state: FSMContext) -> None:
+    user = TemporaryUser.objects.filter(tg_id=message.from_user.id).first()
+
+    if message.text in [menuga_uz, menuga_ru]:
+        await state.set_state(MenuState.menu)
+        await menu_handler(message, state)
+        return
+    elif message.text in (uz.get('new_ques'), ru.get('new_ques')):
+        if user.interface_language == 'uz':
+            await message.answer(text=uz.get('ai_ask'),reply_markup=menu_back_uz())
+        else:
+            await message.answer(text=ru.get('ai_ask'),reply_markup=menu_back_ru())
+        await state.set_state(Ai.response)
+
+@dp.message(StateFilter(Ai.response))
+async def handle_asnwer(message: Message, state: FSMContext) -> None:
+    user = TemporaryUser.objects.filter(tg_id=message.from_user.id).first()
+
+    if message.text in [menuga_uz, menuga_ru]:
+        await state.set_state(MenuState.menu)
+        await menu_handler(message, state)
+        return
+
+    response = await ask_AI(message.text)
+
+    if user.interface_language == 'uz':
+        await message.answer(response, reply_markup=ask_new_uz())
+    else:
+        await message.answer(response, reply_markup=ask_new_ru())
+    await state.set_state(Ai.ask)
+
+
+
+
+
+
+
 # @dp.message(F.content_type == ContentType.PHOTO)
 # async def get_photo_file_id(message: Message):
 #     file_id = message.photo[-1].file_id

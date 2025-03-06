@@ -286,3 +286,33 @@ def file_btn_ru():
     keyboard3=KeyboardButton(text=menuga_ru)
     design=[[keyboard1,keyboard2],[keyboard3]]
     return ReplyKeyboardMarkup(keyboard=design, resize_keyboard=True)
+
+def ai_btn_uz():
+    keyword1=KeyboardButton(text=uz.get('ai_ask1'))
+    keyboard3=KeyboardButton(text=menuga_uz)
+    design=[[keyword1],[keyboard3]]
+    return ReplyKeyboardMarkup(keyboard=design, resize_keyboard=True)
+def menu_back_uz():
+    keyboard3=KeyboardButton(text=menuga_uz)
+    design=[[keyboard3]]
+    return ReplyKeyboardMarkup(keyboard=design, resize_keyboard=True)
+def menu_back_ru():
+    keyboard3=KeyboardButton(text=menuga_ru)
+    design=[[keyboard3]]
+    return ReplyKeyboardMarkup(keyboard=design, resize_keyboard=True)
+def ai_btn_ru():
+    keyword1 = KeyboardButton(text=ru.get('ai_ask1'))
+    keyboard3=KeyboardButton(text=menuga_ru)
+    design=[[keyword1],[keyboard3]]
+    return ReplyKeyboardMarkup(keyboard=design, resize_keyboard=True)
+def ask_new_uz():
+    keyboard1=KeyboardButton(text=uz.get('new_ques'))
+    keyboard3 = KeyboardButton(text=menuga_uz)
+    design = [[keyboard1], [keyboard3]]
+    return ReplyKeyboardMarkup(keyboard=design, resize_keyboard=True)
+
+def ask_new_ru():
+    keyboard1=KeyboardButton(text=ru.get('new_ques'))
+    keyboard3 = KeyboardButton(text=menuga_uz)
+    design = [[keyboard1], [keyboard3]]
+    return ReplyKeyboardMarkup(keyboard=design, resize_keyboard=True)

@@ -97,16 +97,16 @@ def save_to_google_sheets(full_name,
 
 
 async def ask_AI(content):
-    client = AsyncOpenAI(
-        api_key=api_key
-    )
+    # client = AsyncOpenAI(
+    #     api_key=api_key
+    # )
+    #
+    # completion = await client.chat.completions.create(
+    #     model="gpt-4o-mini",
+    #     messages=[{"role": "user", "content": f"{content}"}]
+    # )
 
-    completion = await client.chat.completions.create(
-        model="gpt-4o-mini",
-        messages=[{"role": "user", "content": f"{content}"}]
-    )
-
-    return completion.choices[0].message.content
-
+    # return completion.choices[0].message.content
+    return 'haa men zorman'
 
 
