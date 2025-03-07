@@ -126,4 +126,6 @@ class AllUsersTgId(models.Model):
         return self.tg_id
 
 
-
+class QollanmaFileId(models.Model):
+    file_id=models.CharField(max_length=255)
+    created_at=models.DateTimeField(auto_now_add=True)

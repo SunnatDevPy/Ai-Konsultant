@@ -6,7 +6,7 @@ from aiogram.fsm.context import FSMContext
 from aiogram.types import FSInputFile
 from aiogram.types import Message, ReplyKeyboardRemove, CallbackQuery
 
-from bot.models import TemporaryUser, Referral, AllUsersTgId
+from bot.models import TemporaryUser, Referral, AllUsersTgId,QollanmaFileId
 from dispatcher import dp
 from tg_bot.buttons.inline import *
 from tg_bot.buttons.reply import *
@@ -29,7 +29,6 @@ async def start(message: Message, state: FSMContext) -> None:
         print(f"Args found: {args}")
     else:
         args = None
-
     if args:
         try:
             inviter_id = int(args)
@@ -983,13 +982,14 @@ async def info(message: Message, state: FSMContext) -> None:
 async def info(message: Message, state: FSMContext) -> None:
     user = TemporaryUser.objects.filter(tg_id=message.from_user.id).first()
     user_check = AllUsersTgId.objects.filter(tg_id=message.from_user.id).first()
+    qollanma=QollanmaFileId.objects.all().order_by("-created_at").first()
     if message.text in [menuga_uz, menuga_ru]:
         await state.set_state(MenuState.menu)
         await menu_handler(message, state)
     elif message.text in (uz.get('file_button1'), ru.get('file_button1')):
         if user_check.referal_count > 3:
             await message.answer_document(
-                document="BQACAgIAAxkBAAIPD2fJCD6YBCeiQ-MKsAyLCmYmqYeRAAIibAAC6NhJSlqPmpZkXMBiNgQ",
+                document=qollanma.file_id,
                 caption=uz.get('file_button1'))
             if user.interface_language == 'uz':
                 await message.answer(text=uz.get('ai_txt1'), reply_markup=ai_btn_uz())
@@ -1087,18 +1087,20 @@ async def handle_asnwer(message: Message, state: FSMContext) -> None:
 #     await message.answer(f"🖼 Your photo file ID:\n{file_id}")
 #
 #
-# @dp.message(F.content_type == ContentType.DOCUMENT)
-# async def get_document_file_id(message: Message):
-#     file_id = message.document.file_id
-#     await message.answer(f"📂 Your file ID:\n{file_id}")
-#
-#
+@dp.message(StateFilter(File.qollanma))
+async def get_document_file_id(message: Message,state: FSMContext) -> None:
+    file_id = message.document.file_id
+    qollanma=QollanmaFileId.objects.create(file_id=file_id)
+    qollanma.save()
+    await message.answer(text="Qollanma saqlandi.")
+    await state.clear()
+
 # @dp.message(F.content_type == ContentType.VOICE)
 # async def get_voice_file_id(message: Message):
 #     file_id = message.voice.file_id
 #     await message.answer(f"🎙 Your voice file ID:\n{file_id}")
-#
-#
+
+
 # @dp.message(F.content_type == ContentType.VIDEO)
 # async def get_video_file_id(message: Message):
 #     file_id = message.video.file_id
@@ -1122,5 +1124,10 @@ async def handle_pdf_selection(call: CallbackQuery, state: FSMContext):
 async def handle_pagination(call: CallbackQuery, state: FSMContext):
     page = int(call.data.split("_")[1])
     message_text, keyboard = generate_pdf_list_message(page=page)
-
     await call.message.edit_text(text=message_text, reply_markup=keyboard)
+
+@dp.message(lambda message: message.text ==qollamma)
+async def qollammaTasha(message: Message, state: FSMContext) -> None:
+    await message.answer(text="qollanmani tashang")
+    await state.set_state(File.qollanma)
+

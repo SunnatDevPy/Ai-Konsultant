@@ -13,6 +13,7 @@ class Info(StatesGroup):
     info = State()
 class File(StatesGroup):
     file = State()
+    qollanma=State()
 class Ai(StatesGroup):
     ai = State()
     response=State()
