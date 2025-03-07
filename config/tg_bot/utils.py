@@ -1,5 +1,5 @@
 import re
-
+from bot.models import ChannelsToSubscribe
 import gspread
 from aiogram import Bot
 from aiogram.enums import ChatMemberStatus
@@ -39,9 +39,9 @@ def is_valid_full_name(full_name: str) -> bool:
     return bool(re.fullmatch(r"[A-Za-zÀ-ÖØ-öø-ÿ' -]+", full_name))
 
 
-async def check_user_subscription(user_id: int, chat_ids: str) -> bool:
+async def check_user_subscription(user_id: int) -> bool:
     results = {}
-
+    chat_ids = list(ChannelsToSubscribe.objects.values_list("link", flat=True))
     for chat_id in chat_ids:
         try:
             chat_member: ChatMember = await bot.get_chat_member(chat_id=chat_id, user_id=user_id)
@@ -51,7 +51,7 @@ async def check_user_subscription(user_id: int, chat_ids: str) -> bool:
             print(f"❌ Error checking {chat_id}: {e}")
             results[chat_id] = False
 
-    return results
+    return all(results.values())
 
 
 def remove_at_prefix(text: str) -> str:

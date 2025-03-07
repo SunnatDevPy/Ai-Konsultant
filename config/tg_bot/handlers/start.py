@@ -1,16 +1,12 @@
-import os
-import django
-from aiogram.types import FSInputFile
-os.environ.setdefault('DJANGO_SETTINGS_MODULE', 'config.settings')
-django.setup()
 import re
 from aiogram import F
 from aiogram.filters import StateFilter
 from aiogram.filters.command import Command
 from aiogram.fsm.context import FSMContext
-from aiogram.types import Message, ReplyKeyboardRemove, CallbackQuery, InputFile
+from aiogram.types import FSInputFile
+from aiogram.types import Message, ReplyKeyboardRemove, CallbackQuery
 
-from bot.models import TemporaryUser, Referral, AllUsersTgId,Files_to_download
+from bot.models import TemporaryUser, Referral, AllUsersTgId
 from dispatcher import dp
 from tg_bot.buttons.inline import *
 from tg_bot.buttons.reply import *
@@ -93,13 +89,14 @@ async def select_language(message: Message, state: FSMContext) -> None:
 
 @dp.callback_query(lambda c: c.data == "check_subscription")
 async def check_subscription(callback: CallbackQuery, state: FSMContext):
-    user_temp = TemporaryUser.objects.filter(tg_id=callback.from_user.id).first()
     user_id = callback.from_user.id
-    channels = list(ChannelsToSubscribe.objects.values_list("link", flat=True))
-    subscription_results = await check_user_subscription(user_id, channels)
-
-    if all(subscription_results.values()):
-        print('hiaefew')
+    user_temp = TemporaryUser.objects.filter(tg_id=user_id).first()
+    subscription_results = await check_user_subscription(user_id)
+    data = await state.get_data()
+    sub_msg1 = data.get("sub_msg1")
+    if subscription_results:
+        if sub_msg1:
+            await callback.bot.delete_message(chat_id=callback.message.chat.id, message_id=sub_msg1)
         lang = user_temp.interface_language
         text = uz.get("join_accep") if lang == "uz" else ru.get("join_accep")
         btn = servis_btn_uz(callback.from_user.id) if lang == "uz" else servis_btn_ru(callback.from_user.id)
@@ -115,24 +112,32 @@ async def check_subscription(callback: CallbackQuery, state: FSMContext):
 @dp.message(StateFilter(Subscribe.subscribe))
 async def sub(message: Message, state: FSMContext) -> None:
     user_id = message.from_user.id
-    channels = list(ChannelsToSubscribe.objects.values_list("link", flat=True))
     user = TemporaryUser.objects.filter(tg_id=user_id).first()
-    subscription_results = await check_user_subscription(user_id, channels)
-
-    if all(subscription_results.values()):
+    subscription_results= await check_user_subscription(user_id)
+    if subscription_results:
         await state.set_state(MenuState.menu)
         await menu_handler(message, state)
     else:
         await state.set_state(Subscribe.subscribe)
         lang_text = uz.get("ask_sub") if user.interface_language == "uz" else ru.get("ask_sub")
         lang_txt = uz.get('ask_sub1') if user.interface_language == "uz" else ru.get("ask_sub1")
-        await message.answer(text=lang_txt, reply_markup=ReplyKeyboardRemove())
+        msg1 = await message.answer(text=lang_txt, reply_markup=ReplyKeyboardRemove())
         await message.answer(text=lang_text, reply_markup=join_channels())
+        await state.update_data(sub_msg1=msg1.message_id)
 
 
 @dp.message(StateFilter(MenuState.menu))
 async def menu_handler(message: Message, state: FSMContext) -> None:
     user = TemporaryUser.objects.filter(tg_id=message.from_user.id).first()
+    if not await check_user_subscription(message.from_user.id):
+        await state.set_state(Subscribe.subscribe)
+        lang_text = uz.get("ask_sub") if user.interface_language == "uz" else ru.get("ask_sub")
+        lang_txt = uz.get("ask_sub1") if user.interface_language == "uz" else ru.get("ask_sub1")
+        msg1 = await message.answer(text=lang_txt, reply_markup=ReplyKeyboardRemove())
+        await message.answer(text=lang_text, reply_markup=join_channels())
+        await state.update_data(sub_msg1=msg1.message_id)
+        return
+
     try:
 
         if not user:
@@ -159,6 +164,14 @@ async def menu_handler(message: Message, state: FSMContext) -> None:
 async def servis(message: Message, state: FSMContext) -> None:
     user_temp = TemporaryUser.objects.filter(tg_id=message.from_user.id).first()
     user = UniversityApplication.objects.filter(tg_id=message.from_user.id).first()
+    if not await check_user_subscription(message.from_user.id):
+        await state.set_state(Subscribe.subscribe)
+        lang_text = uz.get("ask_sub") if user_temp.interface_language == "uz" else ru.get("ask_sub")
+        lang_txt = uz.get("ask_sub1") if user_temp.interface_language == "uz" else ru.get("ask_sub1")
+        msg1 = await message.answer(text=lang_txt, reply_markup=ReplyKeyboardRemove())
+        await message.answer(text=lang_text, reply_markup=join_channels())
+        await state.update_data(sub_msg1=msg1.message_id)
+        return
     if not user:
         if user_temp.interface_language == 'uz':
             await message.answer(text=uz.get('ask_fill'))
@@ -196,92 +209,122 @@ async def Mening_ma(message: Message, state: FSMContext) -> None:
 
 @dp.message(lambda message: message.text in (uz.get('ask_fill_info'), ru.get('ask_fill_info')))
 async def begin_fill(message: Message, state: FSMContext) -> None:
-    user_temp = TemporaryUser.objects.filter(tg_id=message.from_user.id).first()
+    user_id=message.from_user.id
+    user_temp = TemporaryUser.objects.filter(tg_id=user_id).first()
+    if not await check_user_subscription(user_id):
+        await state.set_state(Subscribe.subscribe)
+        lang_text = uz.get("ask_sub") if user_temp.interface_language == "uz" else ru.get("ask_sub")
+        lang_txt = uz.get("ask_sub1") if user_temp.interface_language == "uz" else ru.get("ask_sub1")
+        msg1 = await message.answer(text=lang_txt, reply_markup=ReplyKeyboardRemove())
+        await message.answer(text=lang_text, reply_markup=join_channels())
+        await state.update_data(sub_msg1=msg1.message_id)
+        return
     await state.set_state(Messeage.full_name)
     if user_temp.interface_language == 'uz':
-        await message.answer(text=uz.get('name_ask'), reply_markup=back_uz())
+        msg=await message.answer(text=uz.get('name_ask'), reply_markup=back_uz())
+        await state.update_data(msg=msg.message_id)
     else:
-        await message.answer(text=ru.get('name_ask'), reply_markup=back_ru())
+        msg=await message.answer(text=ru.get('name_ask'), reply_markup=back_ru())
+        await state.update_data(msg=msg.message_id)
 
 
 @dp.message(StateFilter(Messeage.full_name))
 async def handle_name(message: Message, state: FSMContext) -> None:
     user = TemporaryUser.objects.filter(tg_id=message.from_user.id).first()
+    data = await state.get_data()
+    await message.delete()
+    if 'msg' in data:
+        await message.bot.delete_message(chat_id=message.chat.id, message_id=data['msg'])
     if message.text in [ortga, nazad]:
         await state.set_state(MenuState.menu)
         await menu_handler(message, state)
         return
-    data = await state.get_data()
     if not is_valid_full_name(message.text):
         await state.set_state(Messeage.full_name)
         if user.interface_language == 'uz':
-            await message.answer(text=uz.get('ask_name_again'), reply_markup=back_uz())
+            msg = await message.answer(text=uz.get('ask_name_again'), reply_markup=back_uz())
+            await state.update_data(msg=msg.message_id)
             return
         else:
-            await message.answer(text=ru.get('ask_name_again'), reply_markup=back_ru())
+            msg = await message.answer(text=ru.get('ask_name_again'), reply_markup=back_ru())
+            await state.update_data(msg=msg.message_id)
             return
     data['full_name'] = message.text
     await state.set_data(data)
     await state.set_state(Messeage.passport)
     if user.interface_language == 'ru':
-        await message.answer(text=ru.get('passport_ask'), reply_markup=back_ru())
+        msg = await message.answer(text=ru.get('passport_ask'), reply_markup=back_ru())
+        await state.update_data(msg=msg.message_id)
     else:
-        await message.answer(text=uz.get('passport_ask'), reply_markup=back_uz())
+        msg = await message.answer(text=uz.get('passport_ask'), reply_markup=back_uz())
+        await state.update_data(msg=msg.message_id)
 
 
 @dp.message(StateFilter(Messeage.passport))
 async def passport(message: Message, state: FSMContext) -> None:
     user = TemporaryUser.objects.filter(tg_id=message.from_user.id).first()
+    data = await state.get_data()
+    await message.delete()  # Fixed: Added parentheses
+    if 'msg' in data:
+        await message.bot.delete_message(chat_id=message.chat.id, message_id=data['msg'])
     if message.text in [ortga, nazad]:
         await state.set_state(Messeage.full_name)
         if user.interface_language == 'uz':
-            await message.answer(text=uz.get('name_ask'))
+            msg = await message.answer(text=uz.get('name_ask'))
+            await state.update_data(msg=msg.message_id)
             return
         else:
-            await message.answer(text=ru.get('name_ask'))
+            msg = await message.answer(text=ru.get('name_ask'))
+            await state.update_data(msg=msg.message_id)
             return
-    data = await state.get_data()
-
-    if passport_number_checker(message.text):
-        data['passport_number'] = message.text
-    else:
+    if not passport_number_checker(message.text):
         await state.set_state(Messeage.passport)
         if user.interface_language == 'uz':
-            await message.answer(text=uz.get('ask_right_pass'), reply_markup=back_uz())
+            msg = await message.answer(text=uz.get('ask_right_pass'), reply_markup=back_uz())
+            await state.update_data(msg=msg.message_id)
             return
         else:
-            await message.answer(text=ru.get('ask_right_pass'), reply_markup=back_ru())
+            msg = await message.answer(text=ru.get('ask_right_pass'), reply_markup=back_ru())
+            await state.update_data(msg=msg.message_id)
             return
+    data['passport_number'] = message.text
     await state.set_data(data)
     await state.set_state(Messeage.phone)
     if user.interface_language == 'ru':
-        await message.answer(text=ru.get('number_ask'), reply_markup=phone_number_btn_ru())
+        msg = await message.answer(text=ru.get('number_ask'), reply_markup=phone_number_btn_ru())
+        await state.update_data(msg=msg.message_id)
     else:
-        await message.answer(text=uz.get('number_ask'), reply_markup=phone_number_btn_uz())
-
-
+        msg = await message.answer(text=uz.get('number_ask'), reply_markup=phone_number_btn_uz())
+        await state.update_data(msg=msg.message_id)
 @dp.message(StateFilter(Messeage.phone))
 async def handle_phone_number(message: Message, state: FSMContext) -> None:
     user = TemporaryUser.objects.filter(tg_id=message.from_user.id).first()
+    data = await state.get_data()
+    if 'msg' in data:
+        await message.bot.delete_message(chat_id=message.chat.id, message_id=data['msg'])
+    await message.delete()
     if message.text in [ortga, nazad]:
         await state.set_state(Messeage.passport)
         if user.interface_language == 'ru':
-            await message.answer(text=ru.get('passport_ask'), reply_markup=back_ru())
+            msg = await message.answer(text=ru.get('passport_ask'), reply_markup=back_ru())
+            await state.update_data(msg=msg.message_id)
             return
         else:
-            await message.answer(text=uz.get('passport_ask'), reply_markup=back_uz())
+            msg = await message.answer(text=uz.get('passport_ask'), reply_markup=back_uz())
+            await state.update_data(msg=msg.message_id)
             return
     if message.contact:
         phone_number = format_phone_number(message.contact.phone_number)
         if not phone_number:
             await state.set_state(Messeage.phone)
             if user.interface_language == 'ru':
-                await message.answer(text=ru.get('number_ask_again'), reply_markup=phone_number_btn_ru())
+                msg = await message.answer(text=ru.get('number_ask_again'), reply_markup=phone_number_btn_ru())
+                await state.update_data(msg=msg.message_id)
                 return
             else:
-                await message.answer(text=uz.get('number_ask_again'), reply_markup=phone_number_btn_uz())
+                msg = await message.answer(text=uz.get('number_ask_again'), reply_markup=phone_number_btn_uz())
+                await state.update_data(msg=msg.message_id)
                 return
-        data = await state.get_data()
         data['phone_number'] = phone_number
         await state.set_data(data)
     elif message.text and re.match(r"^\+\d{9,13}$", message.text):
@@ -289,85 +332,107 @@ async def handle_phone_number(message: Message, state: FSMContext) -> None:
         if not phone_number:
             await state.set_state(Messeage.phone)
             if user.interface_language == 'ru':
-                await message.answer(text=ru.get('number_ask_again'), reply_markup=phone_number_btn_ru())
+                msg = await message.answer(text=ru.get('number_ask_again'), reply_markup=phone_number_btn_ru())
+                await state.update_data(msg=msg.message_id)
                 return
             else:
-                await message.answer(text=uz.get('number_ask_again'), reply_markup=phone_number_btn_uz())
+                msg = await message.answer(text=uz.get('number_ask_again'), reply_markup=phone_number_btn_uz())
+                await state.update_data(msg=msg.message_id)
                 return
-        data = await state.get_data()
         data['phone_number'] = phone_number
         await state.set_data(data)
     else:
         if user.interface_language == 'uz':
-            await message.answer(
+            msg = await message.answer(
                 text=uz.get('number_ask'),
                 reply_markup=phone_number_btn_uz()
             )
+            await state.update_data(msg=msg.message_id)
             return
         else:
-            await message.answer(text=ru.get('number_ask'), reply_markup=phone_number_btn_ru())
-        return
+            msg = await message.answer(text=ru.get('number_ask'), reply_markup=phone_number_btn_ru())
+            await state.update_data(msg=msg.message_id)
+            return
 
     if user.interface_language == 'uz':
-        await message.answer(text=uz.get('extra_number'), reply_markup=back_uz())
+        msg = await message.answer(text=uz.get('extra_number'), reply_markup=back_uz())
+        await state.update_data(msg=msg.message_id)
     else:
-        await message.answer(text=ru.get('extra_number'), reply_markup=back_ru())
+        msg = await message.answer(text=ru.get('extra_number'), reply_markup=back_ru())
+        await state.update_data(msg=msg.message_id)
     await state.set_state(Messeage.extra_number)
 
 
 @dp.message(StateFilter(Messeage.extra_number))
 async def extra_number(message: Message, state: FSMContext) -> None:
     user = TemporaryUser.objects.filter(tg_id=message.from_user.id).first()
+    data = await state.get_data()
+    if 'msg' in data:
+        await message.bot.delete_message(chat_id=message.chat.id, message_id=data['msg'])
+    await message.delete()
     if message.text in [ortga, nazad]:
         await state.set_state(Messeage.phone)
         if user.interface_language == 'uz':
-            await message.answer(
+            msg = await message.answer(
                 text=uz.get('number_ask'),
                 reply_markup=phone_number_btn_uz()
             )
+            await state.update_data(msg=msg.message_id)
             return
         else:
-            await message.answer(text=ru.get('number_ask'), reply_markup=phone_number_btn_ru())
-        return
+            msg = await message.answer(text=ru.get('number_ask'), reply_markup=phone_number_btn_ru())
+            await state.update_data(msg=msg.message_id)
+            return
 
-    data = await state.get_data()
     phone_number = format_phone_number(message.text)
     if not phone_number:
         await state.set_state(Messeage.extra_number)
         if user.interface_language == 'uz':
-            await message.answer(text=uz.get('number_ask_again'), reply_markup=back_uz())
+            msg = await message.answer(text=uz.get('number_ask_again'), reply_markup=back_uz())
+            await state.update_data(msg=msg.message_id)
             return
         else:
-            await message.answer(text=ru.get('number_ask_again'), reply_markup=back_ru())
+            msg = await message.answer(text=ru.get('number_ask_again'), reply_markup=back_ru())
+            await state.update_data(msg=msg.message_id)
             return
     if message.text == data['phone_number']:
         await state.set_state(Messeage.extra_number)
         if user.interface_language == 'uz':
-            await message.answer(text=uz.get('ask_number_again'))
+            msg = await message.answer(text=uz.get('ask_number_again'))
+            await state.update_data(msg=msg.message_id)
             return
         else:
-            await message.answer(text=ru.get('ask_number_again'))
+            msg = await message.answer(text=ru.get('ask_number_again'))
+            await state.update_data(msg=msg.message_id)
             return
 
     data['additional_phone_number'] = phone_number
     await state.set_data(data)
     await state.set_state(Messeage.age)
     if user.interface_language == 'uz':
-        await message.answer(text=uz.get('age_ask'), reply_markup=age_buttons_uz())
+        msg = await message.answer(text=uz.get('age_ask'), reply_markup=age_buttons_uz())
+        await state.update_data(msg=msg.message_id)
     else:
-        await message.answer(text=ru.get('age_ask'), reply_markup=age_buttons_ru())
+        msg = await message.answer(text=ru.get('age_ask'), reply_markup=age_buttons_ru())
+        await state.update_data(msg=msg.message_id)
 
 
 @dp.message(StateFilter(Messeage.age))
 async def age(message: Message, state: FSMContext) -> None:
     user = TemporaryUser.objects.filter(tg_id=message.from_user.id).first()
+    data = await state.get_data()
+    if 'msg' in data:
+        await message.bot.delete_message(chat_id=message.chat.id, message_id=data['msg'])
+    await message.delete()
     if message.text in [ortga, nazad]:
         await state.set_state(Messeage.extra_number)
         if user.interface_language == 'ru':
-            await message.answer(text=ru.get('extra_number'), reply_markup=back_ru())
+            msg = await message.answer(text=ru.get('extra_number'), reply_markup=back_ru())
+            await state.update_data(msg=msg.message_id)
             return
         else:
-            await message.answer(text=uz.get('extra_number'), reply_markup=back_uz())
+            msg = await message.answer(text=uz.get('extra_number'), reply_markup=back_uz())
+            await state.update_data(msg=msg.message_id)
             return
     if not message.text in ['17-19', '20-22', '23-25', '25+']:
         await state.set_state(Messeage.age)
@@ -377,26 +442,33 @@ async def age(message: Message, state: FSMContext) -> None:
         else:
             await message.answer(text=ru.get('button'))
             return
-    data = await state.get_data()
     data['age'] = message.text
     await state.set_data(data)
     await state.set_state(Messeage.study_level)
     if user.interface_language == 'uz':
-        await message.answer(text=uz.get('ask_degree'), reply_markup=study_level_buttons_uz())
+        msg = await message.answer(text=uz.get('ask_degree'), reply_markup=study_level_buttons_uz())
+        await state.update_data(msg=msg.message_id)
     else:
-        await message.answer(text=ru.get('ask_degree'), reply_markup=study_level_buttons_ru())
+        msg = await message.answer(text=ru.get('ask_degree'), reply_markup=study_level_buttons_ru())
+        await state.update_data(msg=msg.message_id)
 
 
 @dp.message(StateFilter(Messeage.study_level))
 async def study_level(message: Message, state: FSMContext) -> None:
     user = TemporaryUser.objects.filter(tg_id=message.from_user.id).first()
+    data = await state.get_data()
+    if 'msg' in data:
+        await message.bot.delete_message(chat_id=message.chat.id, message_id=data['msg'])
+    await message.delete()
     if message.text in [ortga, nazad]:
         await state.set_state(Messeage.age)
         if user.interface_language == 'uz':
-            await message.answer(text=uz.get('age_ask'), reply_markup=age_buttons_uz())
+            msg = await message.answer(text=uz.get('age_ask'), reply_markup=age_buttons_uz())
+            await state.update_data(msg=msg.message_id)
             return
         else:
-            await message.answer(text=ru.get('age_ask'), reply_markup=age_buttons_ru())
+            msg = await message.answer(text=ru.get('age_ask'), reply_markup=age_buttons_ru())
+            await state.update_data(msg=msg.message_id)
             return
     if not message.text in univer:
         if user.interface_language == 'uz':
@@ -405,26 +477,33 @@ async def study_level(message: Message, state: FSMContext) -> None:
         else:
             await message.answer(text=ru.get('button'))
             return
-    data = await state.get_data()
     data['education_level'] = message.text
     await state.set_data(data)
     await state.set_state(Messeage.current_study)
     if user.interface_language == 'uz':
-        await message.answer(text=uz.get('ask_study'), reply_markup=current_study_buttons_uz())
+        msg = await message.answer(text=uz.get('ask_study'), reply_markup=current_study_buttons_uz())
+        await state.update_data(msg=msg.message_id)
     else:
-        await message.answer(text=ru.get('ask_study'), reply_markup=current_study_buttons_ru())
+        msg = await message.answer(text=ru.get('ask_study'), reply_markup=current_study_buttons_ru())
+        await state.update_data(msg=msg.message_id)
 
 
 @dp.message(StateFilter(Messeage.current_study))
 async def current_study(message: Message, state: FSMContext) -> None:
     user = TemporaryUser.objects.filter(tg_id=message.from_user.id).first()
+    data = await state.get_data()
+    if 'msg' in data:
+        await message.bot.delete_message(chat_id=message.chat.id, message_id=data['msg'])
+    await message.delete()
     if message.text in [ortga, nazad]:
         await state.set_state(Messeage.study_level)
         if user.interface_language == 'uz':
-            await message.answer(text=uz.get('ask_degree'), reply_markup=study_level_buttons_uz())
+            msg = await message.answer(text=uz.get('ask_degree'), reply_markup=study_level_buttons_uz())
+            await state.update_data(msg=msg.message_id)
             return
         else:
-            await message.answer(text=ru.get('ask_degree'), reply_markup=study_level_buttons_ru())
+            msg = await message.answer(text=ru.get('ask_degree'), reply_markup=study_level_buttons_ru())
+            await state.update_data(msg=msg.message_id)
             return
     if not message.text in current:
         await state.set_state(Messeage.current_study)
@@ -434,26 +513,33 @@ async def current_study(message: Message, state: FSMContext) -> None:
         else:
             await message.answer(text=ru.get('button'))
             return
-    data = await state.get_data()
     data['current_education'] = message.text
     await state.set_data(data)
     await state.set_state(Messeage.region)
     if user.interface_language == 'uz':
-        await message.answer(text=uz.get('ask_region'), reply_markup=region_buttons_uz())
+        msg = await message.answer(text=uz.get('ask_region'), reply_markup=region_buttons_uz())
+        await state.update_data(msg=msg.message_id)
     else:
-        await message.answer(text=ru.get('ask_region'), reply_markup=region_buttons_ru())
+        msg = await message.answer(text=ru.get('ask_region'), reply_markup=region_buttons_ru())
+        await state.update_data(msg=msg.message_id)
 
 
 @dp.message(StateFilter(Messeage.region))
 async def region(message: Message, state: FSMContext) -> None:
     user = TemporaryUser.objects.filter(tg_id=message.from_user.id).first()
+    data = await state.get_data()
+    if 'msg' in data:
+        await message.bot.delete_message(chat_id=message.chat.id, message_id=data['msg'])
+    await message.delete()
     if message.text in [ortga, nazad]:
         await state.set_state(Messeage.current_study)
         if user.interface_language == 'uz':
-            await message.answer(text=uz.get('ask_study'), reply_markup=current_study_buttons_uz())
+            msg = await message.answer(text=uz.get('ask_study'), reply_markup=current_study_buttons_uz())
+            await state.update_data(msg=msg.message_id)
             return
         else:
-            await message.answer(text=ru.get('ask_study'), reply_markup=current_study_buttons_ru())
+            msg = await message.answer(text=ru.get('ask_study'), reply_markup=current_study_buttons_ru())
+            await state.update_data(msg=msg.message_id)
             return
     if message.text not in regions_valid:
         await state.set_state(Messeage.region)
@@ -463,48 +549,62 @@ async def region(message: Message, state: FSMContext) -> None:
         else:
             await message.answer(text=ru.get('button'))
             return
-    data = await state.get_data()
     data['region'] = message.text
     await state.set_data(data)
     await state.set_state(Messeage.direction)
     if user.interface_language == 'uz':
-        await message.answer(text=uz.get('ask_direction'), reply_markup=direction_buttons_uz())
+        msg = await message.answer(text=uz.get('ask_direction'), reply_markup=direction_buttons_uz())
+        await state.update_data(msg=msg.message_id)
     else:
-        await message.answer(text=ru.get('ask_direction'), reply_markup=direction_buttons_ru())
+        msg = await message.answer(text=ru.get('ask_direction'), reply_markup=direction_buttons_ru())
+        await state.update_data(msg=msg.message_id)
 
 
 @dp.message(StateFilter(Messeage.direction))
 async def direction(message: Message, state: FSMContext) -> None:
     user = TemporaryUser.objects.filter(tg_id=message.from_user.id).first()
+    data = await state.get_data()
+    if 'msg' in data:
+        await message.bot.delete_message(chat_id=message.chat.id, message_id=data['msg'])
+    await message.delete()
     if message.text in [ortga, nazad]:
         await state.set_state(Messeage.region)
         if user.interface_language == 'uz':
-            await message.answer(text=uz.get('ask_region'), reply_markup=region_buttons_uz())
+            msg = await message.answer(text=uz.get('ask_region'), reply_markup=region_buttons_uz())
+            await state.update_data(msg=msg.message_id)
             return
         else:
-            await message.answer(text=ru.get('ask_region'), reply_markup=region_buttons_ru())
+            msg = await message.answer(text=ru.get('ask_region'), reply_markup=region_buttons_ru())
+            await state.update_data(msg=msg.message_id)
             return
 
-    data = await state.get_data()
     data['desired_major'] = message.text
     await state.set_data(data)
     await state.set_state(Messeage.language)
     if user.interface_language == 'uz':
-        await message.answer(text=uz.get('ask_study_lang'), reply_markup=language_buttons_uz())
+        msg = await message.answer(text=uz.get('ask_study_lang'), reply_markup=language_buttons_uz())
+        await state.update_data(msg=msg.message_id)
     else:
-        await message.answer(text=ru.get('ask_study_lang'), reply_markup=language_buttons_ru())
+        msg = await message.answer(text=ru.get('ask_study_lang'), reply_markup=language_buttons_ru())
+        await state.update_data(msg=msg.message_id)
 
 
 @dp.message(StateFilter(Messeage.language))
 async def education_language(message: Message, state: FSMContext) -> None:
     user = TemporaryUser.objects.filter(tg_id=message.from_user.id).first()
+    data = await state.get_data()
+    if 'msg' in data:
+        await message.bot.delete_message(chat_id=message.chat.id, message_id=data['msg'])
+    await message.delete()
     if message.text in [ortga, nazad]:
         await state.set_state(Messeage.direction)
         if user.interface_language == 'uz':
-            await message.answer(text=uz.get('ask_direction'), reply_markup=direction_buttons_uz())
+            msg = await message.answer(text=uz.get('ask_direction'), reply_markup=direction_buttons_uz())
+            await state.update_data(msg=msg.message_id)
             return
         else:
-            await message.answer(text=ru.get('ask_direction'), reply_markup=direction_buttons_ru())
+            msg = await message.answer(text=ru.get('ask_direction'), reply_markup=direction_buttons_ru())
+            await state.update_data(msg=msg.message_id)
             return
     if message.text not in button_texts:
         await state.set_state(Messeage.language)
@@ -514,26 +614,33 @@ async def education_language(message: Message, state: FSMContext) -> None:
         else:
             await message.answer(text=ru.get('button'))
             return
-    data = await state.get_data()
     data['education_language'] = message.text
     await state.set_data(data)
     await state.set_state(Messeage.education_type)
     if user.interface_language == 'uz':
-        await message.answer(text=uz.get('ask_study_mode'), reply_markup=education_type_buttons_uz())
+        msg = await message.answer(text=uz.get('ask_study_mode'), reply_markup=education_type_buttons_uz())
+        await state.update_data(msg=msg.message_id)
     else:
-        await message.answer(text=ru.get('ask_study_mode'), reply_markup=education_type_buttons_ru())
+        msg = await message.answer(text=ru.get('ask_study_mode'), reply_markup=education_type_buttons_ru())
+        await state.update_data(msg=msg.message_id)
 
 
 @dp.message(StateFilter(Messeage.education_type))
 async def education_type(message: Message, state: FSMContext) -> None:
     user = TemporaryUser.objects.filter(tg_id=message.from_user.id).first()
+    data = await state.get_data()
+    if 'msg' in data:
+        await message.bot.delete_message(chat_id=message.chat.id, message_id=data['msg'])
+    await message.delete()
     if message.text in [ortga, nazad]:
         await state.set_state(Messeage.language)
         if user.interface_language == 'uz':
-            await message.answer(text=uz.get('ask_study_lang'), reply_markup=language_buttons_uz())
+            msg = await message.answer(text=uz.get('ask_study_lang'), reply_markup=language_buttons_uz())
+            await state.update_data(msg=msg.message_id)
             return
         else:
-            await message.answer(text=ru.get('ask_study_lang'), reply_markup=language_buttons_ru())
+            msg = await message.answer(text=ru.get('ask_study_lang'), reply_markup=language_buttons_ru())
+            await state.update_data(msg=msg.message_id)
             return
     if message.text not in education_buttons:
         await state.set_state(Messeage.education_type)
@@ -543,26 +650,33 @@ async def education_type(message: Message, state: FSMContext) -> None:
         else:
             await message.answer(text=ru.get('button'))
             return
-    data = await state.get_data()
     data['study_mode'] = message.text
     await state.set_data(data)
     await state.set_state(Messeage.application_type)
     if user.interface_language == 'uz':
-        await message.answer(text=uz.get('ask_aplic_type'), reply_markup=application_type_buttons_uz())
+        msg = await message.answer(text=uz.get('ask_aplic_type'), reply_markup=application_type_buttons_uz())
+        await state.update_data(msg=msg.message_id)
     else:
-        await message.answer(text=ru.get('ask_aplic_type'), reply_markup=application_type_buttons_ru())
+        msg = await message.answer(text=ru.get('ask_aplic_type'), reply_markup=application_type_buttons_ru())
+        await state.update_data(msg=msg.message_id)
 
 
 @dp.message(StateFilter(Messeage.application_type))
 async def application_type(message: Message, state: FSMContext) -> None:
     user = TemporaryUser.objects.filter(tg_id=message.from_user.id).first()
+    data = await state.get_data()
+    if 'msg' in data:
+        await message.bot.delete_message(chat_id=message.chat.id, message_id=data['msg'])
+    await message.delete()
     if message.text in [ortga, nazad]:
         await state.set_state(Messeage.education_type)
         if user.interface_language == 'uz':
-            await message.answer(text=uz.get('ask_study_mode'), reply_markup=education_type_buttons_uz())
+            msg = await message.answer(text=uz.get('ask_study_mode'), reply_markup=education_type_buttons_uz())
+            await state.update_data(msg=msg.message_id)
             return
         else:
-            await message.answer(text=ru.get('ask_study_mode'), reply_markup=education_type_buttons_ru())
+            msg = await message.answer(text=ru.get('ask_study_mode'), reply_markup=education_type_buttons_ru())
+            await state.update_data(msg=msg.message_id)
             return
     if message.text not in application_btn:
         await state.set_state(Messeage.application_type)
@@ -572,26 +686,33 @@ async def application_type(message: Message, state: FSMContext) -> None:
         else:
             await message.answer(text=ru.get('button'))
             return
-    data = await state.get_data()
     data['financial_aid'] = message.text
     await state.set_data(data)
     await state.set_state(Messeage.university_priority)
     if user.interface_language == 'uz':
-        await message.answer(text=uz.get('ask_factor'), reply_markup=university_priority_buttons_uz())
+        msg = await message.answer(text=uz.get('ask_factor'), reply_markup=university_priority_buttons_uz())
+        await state.update_data(msg=msg.message_id)
     else:
-        await message.answer(text=ru.get('ask_factor'), reply_markup=university_priority_buttons_ru())
+        msg = await message.answer(text=ru.get('ask_factor'), reply_markup=university_priority_buttons_ru())
+        await state.update_data(msg=msg.message_id)
 
 
 @dp.message(StateFilter(Messeage.university_priority))
 async def university_priority(message: Message, state: FSMContext) -> None:
     user = TemporaryUser.objects.filter(tg_id=message.from_user.id).first()
+    data = await state.get_data()
+    if 'msg' in data:
+        await message.bot.delete_message(chat_id=message.chat.id, message_id=data['msg'])
+    await message.delete()
     if message.text in [ortga, nazad]:
         await state.set_state(Messeage.application_type)
         if user.interface_language == 'uz':
-            await message.answer(text=uz.get('ask_aplic_type'), reply_markup=application_type_buttons_uz())
+            msg = await message.answer(text=uz.get('ask_aplic_type'), reply_markup=application_type_buttons_uz())
+            await state.update_data(msg=msg.message_id)
             return
         else:
-            await message.answer(text=ru.get('ask_aplic_type'), reply_markup=application_type_buttons_ru())
+            msg = await message.answer(text=ru.get('ask_aplic_type'), reply_markup=application_type_buttons_ru())
+            await state.update_data(msg=msg.message_id)
             return
     if message.text not in all_btn:
         await state.set_state(Messeage.university_priority)
@@ -601,26 +722,33 @@ async def university_priority(message: Message, state: FSMContext) -> None:
         else:
             await message.answer(text=ru.get('button'))
             return
-    data = await state.get_data()
     data['important_factor'] = message.text
     await state.set_data(data)
     await state.set_state(Messeage.assistance)
     if user.interface_language == 'uz':
-        await message.answer(text=uz.get('ask_help'), reply_markup=assistance_buttons_uz())
+        msg = await message.answer(text=uz.get('ask_help'), reply_markup=assistance_buttons_uz())
+        await state.update_data(msg=msg.message_id)
     else:
-        await message.answer(text=ru.get('ask_help'), reply_markup=assistance_buttons_ru())
+        msg = await message.answer(text=ru.get('ask_help'), reply_markup=assistance_buttons_ru())
+        await state.update_data(msg=msg.message_id)
 
 
 @dp.message(StateFilter(Messeage.assistance))
 async def assistance(message: Message, state: FSMContext) -> None:
     user = TemporaryUser.objects.filter(tg_id=message.from_user.id).first()
+    data = await state.get_data()
+    if 'msg' in data:
+        await message.bot.delete_message(chat_id=message.chat.id, message_id=data['msg'])
+    await message.delete()
     if message.text in [ortga, nazad]:
         await state.set_state(Messeage.university_priority)
         if user.interface_language == 'uz':
-            await message.answer(text=uz.get('ask_factor'), reply_markup=university_priority_buttons_uz())
+            msg = await message.answer(text=uz.get('ask_factor'), reply_markup=university_priority_buttons_uz())
+            await state.update_data(msg=msg.message_id)
             return
         else:
-            await message.answer(text=ru.get('ask_factor'), reply_markup=university_priority_buttons_ru())
+            msg = await message.answer(text=ru.get('ask_factor'), reply_markup=university_priority_buttons_ru())
+            await state.update_data(msg=msg.message_id)
             return
     if message.text not in all_btns:
         await state.set_state(Messeage.assistance)
@@ -630,26 +758,33 @@ async def assistance(message: Message, state: FSMContext) -> None:
         else:
             await message.answer(text=ru.get('button'))
             return
-    data = await state.get_data()
     data['help_source'] = message.text
     await state.set_data(data)
     await state.set_state(Messeage.source)
     if user.interface_language == 'uz':
-        await message.answer(text=uz.get('ask_source'), reply_markup=source_buttons_uz())
+        msg = await message.answer(text=uz.get('ask_source'), reply_markup=source_buttons_uz())
+        await state.update_data(msg=msg.message_id)
     else:
-        await message.answer(text=ru.get('ask_source'), reply_markup=source_buttons_ru())
+        msg = await message.answer(text=ru.get('ask_source'), reply_markup=source_buttons_ru())
+        await state.update_data(msg=msg.message_id)
 
 
 @dp.message(StateFilter(Messeage.source))
 async def source(message: Message, state: FSMContext) -> None:
     user = TemporaryUser.objects.filter(tg_id=message.from_user.id).first()
+    data = await state.get_data()
+    if 'msg' in data:
+        await message.bot.delete_message(chat_id=message.chat.id, message_id=data['msg'])
+    await message.delete()
     if message.text in [ortga, nazad]:
         await state.set_state(Messeage.assistance)
         if user.interface_language == 'uz':
-            await message.answer(text=uz.get('ask_help'), reply_markup=assistance_buttons_uz())
+            msg = await message.answer(text=uz.get('ask_help'), reply_markup=assistance_buttons_uz())
+            await state.update_data(msg=msg.message_id)
             return
         else:
-            await message.answer(text=ru.get('ask_help'), reply_markup=assistance_buttons_ru())
+            msg = await message.answer(text=ru.get('ask_help'), reply_markup=assistance_buttons_ru())
+            await state.update_data(msg=msg.message_id)
             return
     if message.text not in all_buttons:
         await state.set_state(Messeage.source)
@@ -662,13 +797,14 @@ async def source(message: Message, state: FSMContext) -> None:
     if message.text in [boshqa, drugoy]:
         await state.set_state(Messeage.customMessage)
         if user.interface_language == 'uz':
-            await message.answer(text="👨‍💻 Shaxsiy javobingiz.", reply_markup=ReplyKeyboardRemove())
+            msg = await message.answer(text="👨‍💻 Shaxsiy javobingiz.", reply_markup=ReplyKeyboardRemove())
+            await state.update_data(msg=msg.message_id)
             return
         else:
-            await message.answer(text="👨‍💻 Ваш личный ответ.", reply_markup=ReplyKeyboardRemove())
+            msg = await message.answer(text="👨‍💻 Ваш личный ответ.", reply_markup=ReplyKeyboardRemove())
+            await state.update_data(msg=msg.message_id)
             return
 
-    data = await state.get_data()
     data['bot_source'] = message.text
     await state.set_data(data)
     await state.set_state(Messeage.accept)
@@ -678,16 +814,21 @@ async def source(message: Message, state: FSMContext) -> None:
 @dp.message(StateFilter(Messeage.customMessage))
 async def custom(message: Message, state: FSMContext) -> None:
     user = TemporaryUser.objects.filter(tg_id=message.from_user.id).first()
+    data = await state.get_data()
+    if 'msg' in data:
+        await message.bot.delete_message(chat_id=message.chat.id, message_id=data['msg'])
+    await message.delete()
     if message.text in [ortga, nazad]:
         await state.set_state(Messeage.assistance)
         if user.interface_language == 'uz':
-            await message.answer(text=uz.get('ask_help'), reply_markup=assistance_buttons_uz())
+            msg = await message.answer(text=uz.get('ask_help'), reply_markup=assistance_buttons_uz())
+            await state.update_data(msg=msg.message_id)
             return
         else:
-            await message.answer(text=ru.get('ask_help'), reply_markup=assistance_buttons_ru())
+            msg = await message.answer(text=ru.get('ask_help'), reply_markup=assistance_buttons_ru())
+            await state.update_data(msg=msg.message_id)
             return
 
-    data = await state.get_data()
     data['bot_source'] = message.text
     await state.set_data(data)
     await state.set_state(Messeage.accept)
@@ -754,11 +895,13 @@ async def confirm_handler(call: CallbackQuery, state: FSMContext) -> None:
     # save_to_google_sheets(**data)
 
     await state.set_state(MenuState.menu)
-    await call.message.delete()
     if user_temp.interface_language == 'uz':
-        await call.message.answer(text="✅ Ma'lumotlaringiz muvaffaqiyatli saqlandi!", reply_markup=servis_btn_uz(call.from_user.id))
+        await call.message.delete()
+        await call.message.answer(text="✅ Ma'lumotlaringiz muvaffaqiyatli saqlandi!",
+                                  reply_markup=servis_btn_uz(call.from_user.id))
     else:
-        await call.message.answer(text="✅ Ваши данные успешно сохранены!", reply_markup=servis_btn_ru(call.from_user.id))
+        await call.message.answer(text="✅ Ваши данные успешно сохранены!",
+                                  reply_markup=servis_btn_ru(call.from_user.id))
 
     await call.answer()
     await state.clear()
@@ -770,9 +913,11 @@ async def cancel_handler(call: CallbackQuery, state: FSMContext) -> None:
     await state.set_state(MenuState.menu)
 
     if user.interface_language == "uz":
-        await call.message.edit_text(text="❌ Ma'lumotlaringiz bekor qilindi!", reply_markup=servis_btn_uz(call.from_user.id))
+        await call.message.delete()
+        await call.message.answer(text="❌ Ma'lumotlaringiz bekor qilindi!",
+                                  reply_markup=servis_btn_uz(call.from_user.id))
     else:
-        await call.message.edit_text(text="❌ Ваши данные были удалены!", reply_markup=servis_btn_ru(call.from_user.id))
+        await call.message.answer(text="❌ Ваши данные были удалены!", reply_markup=servis_btn_ru(call.from_user.id))
 
     await call.answer()
     await state.clear()
@@ -966,6 +1111,7 @@ async def handle_pdf_selection(call: CallbackQuery, state: FSMContext):
         await call.message.answer_document(document=document, caption=f"📄 {file_obj.caption}")
     else:
         await call.answer("❌ File not found!", show_alert=True)
+
 
 @dp.callback_query(F.data.startswith("page_"))
 async def handle_pagination(call: CallbackQuery, state: FSMContext):
