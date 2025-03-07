@@ -32,7 +32,7 @@ uz = {
     "ask_fill":"❌ Bu xizmatdan foydalanish uchun oldin malumotlaringizni to'ldiring!",
     "file_button1":"🧾 Grant olish bo‘yicha maxsus qo‘llanma!",
     "file_button2":"📑 Bepul DTM test to‘plami!",
-    "file_txt1":"🙋 Foyadli bo'lgan malumotlarni yuklab olish uchun botga do'stingizni taklif qilishingiz kerak. \n\n1️⃣ 3 ta do‘stingizni taklif qiling va “📓 Grant olish bo‘yicha maxsus qo‘llanma” ga ega bo'ling. \n\n2️⃣ 10 ta do‘st taklif qiling va “📑 Bepul DTM test to‘plamlaridan” dan bahramand bo'ling.",
+    "file_txt1":"🙋 Foyadli bo'lgan malumotlarni yuklab olish uchun botga do'stingizni taklif qilishingiz kerak. \n\n1️⃣ 3 ta do‘stingizni taklif qiling va “📓 Grant olish bo‘yicha maxsus qo‘llanma” ga ega bo'ling. \n\n2️⃣ 10 ta do‘st taklif qiling va “📑 Bepul DTM test to‘plamlari” dan bahramand bo'ling.",
     "invite1":"❌ Siz qo'llanmani yuklab olish uchun yana do'slaringizni taklif qilishingiz kerak.",
     "join_accep":"✅ A'zolik tasdiqlandi.",
     "button":"🎛 Tugmalardan foydalaning.",
