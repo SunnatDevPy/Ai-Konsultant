@@ -55,7 +55,7 @@ def generate_pdf_list_message(page: int = 1, per_page: int = 10):
     paginator = Paginator(pdfs, per_page)
     page_obj = paginator.get_page(page)
 
-    message_text = f"📄 *DTM test* (Page {page}/{paginator.num_pages})\n\n"
+    message_text = f"📄 *DTM test*             (Page {page}/{paginator.num_pages})      \n\n"
     buttons = []
 
     for index, file in enumerate(page_obj, start=1 + (page - 1) * per_page):
