@@ -838,6 +838,11 @@ async def custom(message: Message, state: FSMContext) -> None:
 @dp.message(StateFilter(Messeage.accept))
 async def accept(message: Message, state: FSMContext) -> None:
     data = await state.get_data()
+    if 'msg' in data:
+        del data['msg']
+    if "sub_msg1" in data:
+        del data['sub_msg1']
+    await state.set_data(data)
     user = TemporaryUser.objects.filter(tg_id=message.from_user.id).first()
     if user.interface_language == 'uz':
         await message.answer(text=uz.get('ask_accept'), reply_markup=ReplyKeyboardRemove())
