@@ -148,9 +148,6 @@ async def check_subscription(callback: CallbackQuery, state: FSMContext):
 async def sub(message: Message, state: FSMContext) -> None:
     user_id = message.from_user.id
     user = TemporaryUser.objects.filter(tg_id=user_id).first()
-    if not user:
-        await message.answer("Error: User not found.")
-        return
     subscription_results = await check_user_subscription(user_id)
     if subscription_results:
         await state.set_state(MenuState.menu)
@@ -159,12 +156,6 @@ async def sub(message: Message, state: FSMContext) -> None:
         await state.set_state(Subscribe.subscribe)
         lang_text = uz.get("ask_sub") if user.interface_language == "uz" else ru.get("ask_sub")
         lang_txt = uz.get('ask_sub1') if user.interface_language == "uz" else ru.get("ask_sub1")
-        data = await state.get_data()
-        if "sub_msg1" in data:
-            try:
-                await message.bot.delete_message(chat_id=message.chat.id, message_id=data["sub_msg1"])
-            except Exception:
-                pass
         msg1 = await message.answer(text=lang_txt, reply_markup=ReplyKeyboardRemove())
         await message.answer(text=lang_text, reply_markup=join_channels())
         await state.update_data(sub_msg1=msg1.message_id)
