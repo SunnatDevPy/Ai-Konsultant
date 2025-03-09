@@ -3,6 +3,7 @@ from bot.models import ChannelsToSubscribe,Files_to_download
 from aiogram.types import InlineKeyboardButton, InlineKeyboardMarkup
 from aiogram.utils.keyboard import InlineKeyboardBuilder
 from django.core.paginator import Paginator
+from tg_bot.buttons.text import *
 
 def accept_btn():
     accept = InlineKeyboardButton(text="✅ Ma'lumotlarni tasdiqlash", callback_data="accepted")
@@ -78,3 +79,14 @@ def generate_pdf_list_message(page: int = 1, per_page: int = 10):
     keyboard = InlineKeyboardMarkup(inline_keyboard=keyboard_buttons)
 
     return message_text, keyboard
+
+def edit_info_uz():
+    keyboard1=InlineKeyboardButton(text="📝 Malumotlarni tahrirlash.",callback_data="edit_info")
+    design=[[keyboard1]]
+    return InlineKeyboardMarkup(inline_keyboard=design)
+
+def edit_info_ru():
+    keyboard1=InlineKeyboardButton(text="📝 Редактировать информацию.",callback_data="edit_info")
+    design=[[keyboard1]]
+    return InlineKeyboardMarkup(inline_keyboard=design)
+

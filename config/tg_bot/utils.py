@@ -7,7 +7,7 @@ from aiogram.types import ChatMember
 from decouple import config
 from oauth2client.service_account import ServiceAccountCredentials
 from openai import AsyncOpenAI
-
+from aiogram.types import BotCommand
 # from dispatcher import TOKEN
 
 file_place = config("FILE_PLACE")
@@ -107,6 +107,13 @@ async def ask_AI(content):
     # )
 
     # return completion.choices[0].message.content
-    return 'haa men zorman'
+    return 'Taminotchi API Key olib bermagani uchun bu xizmat ishlamayapti'
 
 
+async def set_bot_commands(bot: Bot):
+    commands = [
+        BotCommand(command="start", description="🚀 Start the bot"),
+        BotCommand(command="apply", description="📑 Start Application"),
+        BotCommand(command="about", description="📋 Little about USAT University"),
+    ]
+    await bot.set_my_commands(commands)

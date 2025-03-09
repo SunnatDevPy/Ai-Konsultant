@@ -16,7 +16,26 @@ from tg_bot.utils import format_phone_number, passport_number_checker, is_valid_
     ask_AI
 
 
-# from aiogram.utils.markdown import hlink
+@dp.message(Command("about"), StateFilter(None))
+async def about(message: Message, state: FSMContext) -> None:
+    user_temp = TemporaryUser.objects.filter(tg_id=message.from_user.id).first()
+    photo = FSInputFile("tg_bot/handlers/img.png")
+
+    if user_temp.interface_language == 'uz':
+        await message.answer_photo(photo=photo, caption=uz.get('about'))
+    else:
+        await message.answer_photo(photo=photo, caption=ru.get('about'))
+
+@dp.message(Command("apply"), StateFilter(None))
+async def register(message: Message, state: FSMContext) -> None:
+    user_temp=TemporaryUser.objects.filter(tg_id=message.from_user.id).first()
+    await state.set_state(Messeage.full_name)
+    if user_temp.interface_language == 'uz':
+        msg = await message.answer(text=uz.get('name_ask'), reply_markup=back_uz())
+        await state.update_data(msg=msg.message_id)
+    else:
+        msg = await message.answer(text=ru.get('name_ask'), reply_markup=back_ru())
+        await state.update_data(msg=msg.message_id)
 
 @dp.message(Command("start"), StateFilter(None))
 async def start(message: Message, state: FSMContext) -> None:
@@ -25,7 +44,6 @@ async def start(message: Message, state: FSMContext) -> None:
 
     if tg_id not in idlar:
         AllUsersTgId.objects.create(tg_id=tg_id)
-
     user1 = TemporaryUser.objects.filter(tg_id=tg_id).first()
 
     if ' ' in message.text:
@@ -38,6 +56,8 @@ async def start(message: Message, state: FSMContext) -> None:
         try:
             inviter_id = int(args)
             await state.update_data(inviter_id=inviter_id)
+            print('sqalnadai'
+                  'ette')
 
         except ValueError:
             pass
@@ -75,15 +95,37 @@ async def select_language(message: Message, state: FSMContext) -> None:
     await menu_handler(message, state)
 
 
-@dp.callback_query(lambda c: c.data == "check_subscription")
+@dp.callback_query(F.data == "check_subscription")
 async def check_subscription(callback: CallbackQuery, state: FSMContext):
     user_id = callback.from_user.id
     user_temp = TemporaryUser.objects.filter(tg_id=user_id).first()
     subscription_results = await check_user_subscription(user_id)
     data = await state.get_data()
-
+    inviter_id = data.get("inviter_id")
     if subscription_results:
+        print(inviter_id)
 
+        if inviter_id:
+            print('ishladi')
+            user1 = AllUsersTgId.objects.filter(tg_id=user_id).first()
+            referred = Referral.objects.filter(referrer_id=inviter_id, referred_user_id=user_id).first()
+            if not referred and user1:
+                Referral.objects.create(referrer_id=inviter_id, referred_user_id=user_id)
+                inviter = AllUsersTgId.objects.get(tg_id=inviter_id)
+                inviter.referal_count += 1
+                inviter.save()
+
+                await callback.bot.send_message(
+                    chat_id=inviter_id,
+                    text=f"🥳 Tabriklayman! Sizning referalingiz orqali <a href='tg://user?id={user_id}'>{callback.from_user.full_name}</a> ro'yxatdan o'tdi.",
+                    parse_mode="HTML"
+                )
+            else:
+                await callback.bot.send_message(
+                    chat_id=inviter_id,
+                    text=f"😕 Sizning referalingiz orqali ro'yxatdan o'tgan <a href='tg://user?id={user_id}'>{callback.from_user.full_name}</a> allaqachon bizning bot a'zosi hisoblanadi.",
+                    parse_mode="HTML"
+                )
         if sub_msg1 := data.get("sub_msg1"):
             await callback.bot.delete_message(chat_id=callback.message.chat.id, message_id=sub_msg1)
 
@@ -93,7 +135,9 @@ async def check_subscription(callback: CallbackQuery, state: FSMContext):
 
         await callback.message.answer(text=text, reply_markup=btn)
         await callback.message.delete()
-        await state.clear()
+        await state.set_state(MenuState.menu)
+        await menu_handler(callback.message, state)
+        return
     else:
         lang = user_temp.interface_language or "uz"
         text = uz.get("didnt_sub") if lang == "uz" else ru.get("didnt_sub")
@@ -104,6 +148,9 @@ async def check_subscription(callback: CallbackQuery, state: FSMContext):
 async def sub(message: Message, state: FSMContext) -> None:
     user_id = message.from_user.id
     user = TemporaryUser.objects.filter(tg_id=user_id).first()
+    if not user:
+        await message.answer("Error: User not found.")
+        return
     subscription_results = await check_user_subscription(user_id)
     if subscription_results:
         await state.set_state(MenuState.menu)
@@ -112,9 +159,16 @@ async def sub(message: Message, state: FSMContext) -> None:
         await state.set_state(Subscribe.subscribe)
         lang_text = uz.get("ask_sub") if user.interface_language == "uz" else ru.get("ask_sub")
         lang_txt = uz.get('ask_sub1') if user.interface_language == "uz" else ru.get("ask_sub1")
+        data = await state.get_data()
+        if "sub_msg1" in data:
+            try:
+                await message.bot.delete_message(chat_id=message.chat.id, message_id=data["sub_msg1"])
+            except Exception:
+                pass
         msg1 = await message.answer(text=lang_txt, reply_markup=ReplyKeyboardRemove())
         await message.answer(text=lang_text, reply_markup=join_channels())
         await state.update_data(sub_msg1=msg1.message_id)
+
 
 
 @dp.message(StateFilter(MenuState.menu))
@@ -130,37 +184,14 @@ async def menu_handler(message: Message, state: FSMContext) -> None:
         await state.update_data(sub_msg1=msg1.message_id)
         return
 
-    data = await state.get_data()
-    inviter_id = data.get("inviter_id")
 
-    if inviter_id:
-        print('ishladi')
-        user_id = message.from_user.id
-        user1 = AllUsersTgId.objects.filter(tg_id=user_id).first()
-        referred = Referral.objects.filter(referrer_id=inviter_id, referred_user_id=user_id).first()
-        if not referred and user1:
-            Referral.objects.create(referrer_id=inviter_id, referred_user_id=user_id)
-            inviter = AllUsersTgId.objects.get(tg_id=inviter_id)
-            inviter.referal_count += 1
-            inviter.save()
 
-            await message.bot.send_message(
-                chat_id=inviter_id,
-                text=f"🥳 Tabriklayman! Sizning referalingiz orqali <a href='tg://user?id={user_id}'>{message.from_user.full_name}</a> ro'yxatdan o'tdi.",
-                parse_mode="HTML"
-            )
-        else:
-            await message.bot.send_message(
-                chat_id=inviter_id,
-                text=f"😕 Sizning referalingiz orqali ro'yxatdan o'tgan <a href='tg://user?id={user_id}'>{message.from_user.full_name}</a> allaqachon bizning bot a'zosi hisoblanadi.",
-                parse_mode="HTML"
-            )
 
     if not user:
         await menu_handler(message, state)
         return
 
-    # Send main menu options based on the user's language
+
     if user.interface_language == "uz":
         await message.answer(
             text=uz.get('servis'),
@@ -908,7 +939,7 @@ async def accept(message: Message, state: FSMContext) -> None:
         )
 
 
-@dp.callback_query(lambda call: call.data == 'accepted')
+@dp.callback_query(F.data == 'accepted')
 async def confirm_handler(call: CallbackQuery, state: FSMContext) -> None:
     data = await state.get_data()
     data['tg_id'] = call.from_user.id
@@ -921,17 +952,17 @@ async def confirm_handler(call: CallbackQuery, state: FSMContext) -> None:
     await state.set_state(MenuState.menu)
     if user_temp.interface_language == 'uz':
         await call.message.delete()
-        await call.message.answer(text="✅ Ma'lumotlaringiz muvaffaqiyatli saqlandi!",
+        await call.message.answer(text="✅ Tabriklaymiz! Siz muvaffaqiyatli ro‘yxatdan o‘tdingiz!",
                                   reply_markup=servis_btn_uz(call.from_user.id))
     else:
-        await call.message.answer(text="✅ Ваши данные успешно сохранены!",
+        await call.message.answer(text="✅ Поздравляем! Вы успешно зарегистрировались!",
                                   reply_markup=servis_btn_ru(call.from_user.id))
 
     await call.answer()
     await state.clear()
 
 
-@dp.callback_query(lambda call: call.data == 'cancelled')
+@dp.callback_query(F.data == 'cancelled')
 async def cancel_handler(call: CallbackQuery, state: FSMContext) -> None:
     user = TemporaryUser.objects.filter(tg_id=call.from_user.id).first()
     await state.set_state(MenuState.menu)
@@ -974,7 +1005,8 @@ async def info(message: Message, state: FSMContext) -> None:
             f"<b>🤖 Bot haqida kimdan eshitganligi:   </b> {user.bot_source}"
         ]
         text = "\n".join(datas)
-        await message.answer(text=text)
+        await message.answer(text=text,reply_markup=edit_info_uz())
+        await state.clear()
 
     else:
         datas = [
@@ -994,8 +1026,8 @@ async def info(message: Message, state: FSMContext) -> None:
             f"<b>🤖 Откуда узнали о боте:   </b> {user.bot_source}"
         ]
         text = "\n".join(datas)
-        await message.answer(text=text)
-        await state.set_state(MenuState.menu)
+        await message.answer(text=text,reply_markup=edit_info_ru())
+        await state.clear()
 
 
 @dp.message(StateFilter(File.file))
@@ -1160,3 +1192,8 @@ async def handle_pagination(call: CallbackQuery, state: FSMContext):
 async def qollammaTasha(message: Message, state: FSMContext) -> None:
     await message.answer(text="qollanmani tashang")
     await state.set_state(File.qollanma)
+
+@dp.callback_query(F.data == 'edit_info')
+async def cancel_handler(call: CallbackQuery, state: FSMContext) -> None:
+    await call.answer(text="asdad")
+    await state.clear()
