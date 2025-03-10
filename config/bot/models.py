@@ -5,6 +5,11 @@ class Files_to_download(models.Model):
     file=models.FileField(upload_to='uploads/')
     created_at = models.DateTimeField(auto_now_add=True)
     updated_at = models.DateTimeField(auto_now=True)
+    order = models.PositiveIntegerField(default=0, blank=False, null=False)
+
+    class Meta:
+        ordering = ["order"]
+
     def __str__(self):
         return self.caption
 
@@ -89,12 +94,16 @@ class UniversityApplication(models.Model):
     tg_id=models.BigIntegerField(unique=True)
     bot_source = models.CharField(max_length=100, choices=SOURCE_CHOICES)
     created_at = models.DateTimeField(auto_now_add=True)
+    order = models.PositiveIntegerField(default=0, blank=False, null=False)
 
+    class Meta:
+        ordering = ["order"]
     def __str__(self):
         return self.full_name
 class TemporaryUser(models.Model):
     interface_language = models.CharField(max_length=10)
     tg_id = models.BigIntegerField()
+
     def __str__(self):
         return self.name
 class StudyDirections_uz(models.Model):

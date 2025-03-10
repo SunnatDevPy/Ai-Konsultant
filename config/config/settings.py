@@ -38,6 +38,7 @@ ALLOWED_HOSTS = config("ALLOWED_HOSTS", default="localhost,127.0.0.1,[::1]").spl
 # Application definition
 
 INSTALLED_APPS = [
+    'jazzmin',
     'django.contrib.admin',
     'django.contrib.auth',
     'django.contrib.contenttypes',
@@ -47,6 +48,7 @@ INSTALLED_APPS = [
     #Custom Apps
     'bot',
     'django_celery_beat',
+    'adminsortable2'
 ]
 
 MIDDLEWARE = [
@@ -58,6 +60,16 @@ MIDDLEWARE = [
     'django.contrib.messages.middleware.MessageMiddleware',
     'django.middleware.clickjacking.XFrameOptionsMiddleware',
 ]
+JAZZMIN_SETTINGS = {
+    "site_title": "Admin Panel",
+    "site_header": "My Admin",
+    "welcome_sign": "Xush kelibsiz!",
+    "copyright": "My Company",
+    "topmenu_links": [
+        {"name": "Home", "url": "admin:index", "permissions": ["auth.view_user"]},
+        {"name": "Google", "url": "https://www.google.com", "new_window": True},
+    ],
+}
 
 ROOT_URLCONF = 'config.urls'
 
@@ -91,16 +103,15 @@ WSGI_APPLICATION = 'config.wsgi.application'
 # }
 
 DATABASES = {
-    "default": {
-        "ENGINE": "django.db.backends.postgresql",
-        "NAME": config("POSTGRES_DB"),
-        "USER": config("POSTGRES_USER"),
-        "PASSWORD": config("POSTGRES_PASSWORD"),
-        "HOST": config("POSTGRES_HOST", default="localhost"),
-        # "HOST": 'pg',
-        "PORT": config("POSTGRES_PORT", default=5434, cast=int),
-'OPTIONS': {
-            'options': '-c search_path=bot_database'
+    'default': {
+        'ENGINE': config('DB_ENGINE', default='django.db.backends.postgresql'),
+        'NAME': config('DB_NAME'),
+        'USER': config('DB_USER'),
+        'PASSWORD': config('DB_PASSWORD'),
+        'HOST': config('DB_HOST'),
+        'PORT': config('DB_PORT', default='5432'),
+        'OPTIONS': {
+            'options': f"-c search_path={config('DB_SCHEMA', default='public')}"
         }
     }
 }
@@ -141,8 +152,9 @@ USE_TZ = True
 PAGINATION_PAGE_SIZE = int(os.getenv("PAGINATION_PAGE_SIZE", "10"))
 
 
-STATIC_URL = "/static/"
-STATICFILES_DIRS = [BASE_DIR / "static"]  # Keep this for development
+STATIC_URL = 'static/'
+STATICFILES_DIRS = [BASE_DIR / "static"]
+STATIC_ROOT = BASE_DIR / "staticfiles"
 
 # Media files (User uploads)
 MEDIA_URL = "/media/"
